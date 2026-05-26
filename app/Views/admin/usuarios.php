@@ -31,7 +31,7 @@
                     <a href="<?= base_url('usuarios/eliminar/'.$u['id_usuario']) ?>" 
                        onclick="return confirm('¿Estás seguro de eliminar a este usuario?')" 
                        class="text-red-600 hover:underline font-medium">
-                        Eliminar
+                        Dar de baja
                     </a>
                 </td>
                 <td class="p-4">
