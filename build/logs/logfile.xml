@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="App\Models\UsuarioModelTest" file="C:\laragon\www\el_mangle\tests\app\Models\UsuarioModelTest.php" tests="1" assertions="1" errors="0" failures="1" skipped="0" time="0.029936">
+    <testcase name="testUsuarioModel" file="C:\laragon\www\el_mangle\tests\app\Models\UsuarioModelTest.php" line="10" class="App\Models\UsuarioModelTest" classname="App.Models.UsuarioModelTest" assertions="1" time="0.029936">
+      <failure type="PHPUnit\Framework\ExpectationFailedException">App\Models\UsuarioModelTest::testUsuarioModel&#13;
+Failed asserting that two strings are equal.
+--- Expected
++++ Actual
+@@ @@
+-'Usuarios'
++'Usuario'
+&#13;
+C:\laragon\www\el_mangle\tests\app\Models\UsuarioModelTest.php:16</failure>
+    </testcase>
+  </testsuite>
+</testsuites>
