@@ -24,9 +24,17 @@ $routes->get('usuarios/eliminar/(:num)', 'Usuarios::eliminar/$1');
 $routes->get('materiaprima', 'MateriaPrima::index');
 $routes->get('materiaprima/agregar', 'MateriaPrima::agregar');
 $routes->post('materiaprima/guardar', 'MateriaPrima::guardar');
-$routes->get('materiaprima/editar/(:num)', 'MateriaPrima::editar/$1');       // Carga la vista de edición
-$routes->post('materiaprima/actualizar/(:num)', 'MateriaPrima::actualizar/$1'); // Guarda los cambios
+$routes->get('materiaprima/editar/(:num)', 'MateriaPrima::editar/$1');
+$routes->post('materiaprima/actualizar/(:num)', 'MateriaPrima::actualizar/$1');
 $routes->get('materiaprima/eliminar/(:num)', 'MateriaPrima::eliminar/$1');
+
+// --- RUTAS DE PLATILLOS ---
+$routes->get('platillos', 'Platillos::index');
+$routes->get('platillos/agregar', 'Platillos::agregar');
+$routes->post('platillos/guardar', 'Platillos::guardar');
+$routes->get('platillos/editar/(:num)', 'Platillos::editar/$1');
+$routes->post('platillos/actualizar/(:num)', 'Platillos::actualizar/$1');
+$routes->get('platillos/eliminar/(:num)', 'Platillos::eliminar/$1');
 
 // Ruta principal
 $routes->get('/', 'Usuarios::index');
