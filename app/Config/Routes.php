@@ -16,6 +16,13 @@ $routes->get('/', 'Login::index'); // La ruta base ahora es el Login
 $routes->post('login/ingresar', 'Login::ingresar');
 $routes->get('login/salir', 'Login::salir');
 
+// --- RUTAS DEL PUNTO DE VENTA (POS) ---
+// --- RUTAS DEL PUNTO DE VENTA (POS) ---
+$routes->get('pos', 'Pos::index');
+$routes->get('pos/mesa/(:num)', 'Pos::mesa/$1');
+$routes->get('pos/filtrar/(:num)/(:num)', 'Pos::filtrar/$1/$2');
+$routes->get('pos/filtrar/(:num)/(:num)/(:any)', 'Pos::filtrar/$1/$2/$3'); // RUTA PARA LAS PESTAÑAS
+
 // --- RUTAS DE USUARIOS ---
 $routes->get('usuarios', 'Usuarios::index');
 $routes->get('usuarios/agregar', 'Usuarios::agregar');

@@ -59,9 +59,9 @@ class Login extends BaseController
     private function rutaPorRol($id_rol)
     {
         if ($id_rol == 1) {
-            return base_url('usuarios'); 
+            return base_url('usuarios'); // El Admin va al Back-Office
         } else {
-            return base_url('platillos'); 
+            return base_url('pos'); // Meseros y Capitanes van al Punto de Venta (POS)
         }
     }
 }

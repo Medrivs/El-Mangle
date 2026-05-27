@@ -17,6 +17,7 @@ class PlatilloModel extends Model
         'precio_venta', 
         'id_categoria', 
         'imagen_url', 
-        'disponible'
+        'disponible',
+        'subcategoria'
     ];
 }
