@@ -22,6 +22,7 @@ $routes->get('pos', 'Pos::index');
 $routes->get('pos/mesa/(:num)', 'Pos::mesa/$1');
 $routes->get('pos/filtrar/(:num)/(:num)', 'Pos::filtrar/$1/$2');
 $routes->get('pos/filtrar/(:num)/(:num)/(:any)', 'Pos::filtrar/$1/$2/$3'); // RUTA PARA LAS PESTAÑAS
+$routes->get('pos/seleccionar/(:num)/(:num)', 'Pos::seleccionar_platillo/$1/$2');
 
 // --- RUTAS DE USUARIOS ---
 $routes->get('usuarios', 'Usuarios::index');

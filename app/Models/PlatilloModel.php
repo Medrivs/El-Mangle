@@ -20,4 +20,5 @@ class PlatilloModel extends Model
         'disponible',
         'subcategoria'
     ];
+    
 }

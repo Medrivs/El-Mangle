@@ -40,7 +40,7 @@ class Pos extends BaseController
     }
     // Paso 2: Ver platillos de la categoría seleccionada
 // Paso 2: Ver platillos divididos por pestañas (subcategorías)
-    public function filtrar($id_mesa, $id_categoria, $subcategoria_activa = null)
+public function filtrar($id_mesa, $id_categoria, $subcategoria_activa = null)
     {
         if (!session()->get('isLoggedIn')) return redirect()->to(base_url('/'));
 
@@ -51,25 +51,45 @@ class Pos extends BaseController
         $data['mesa'] = $mesaModel->find($id_mesa);
         $data['categoria'] = $catModel->find($id_categoria);
         
-        // Buscamos qué pestañas (subcategorías) existen en esta categoría
+        // Buscamos las subcategorías únicas que existen para esta categoría
         $db = \Config\Database::connect();
-        $query = $db->query("SELECT DISTINCT subcategoria FROM platillo WHERE id_categoria = ? AND disponible = 1", [$id_categoria]);
+        $query = $db->query("SELECT DISTINCT subcategoria FROM Platillo WHERE id_categoria = ? AND disponible = 1", [$id_categoria]);
         $data['pestañas'] = $query->getResultArray();
 
-        // Si entramos por primera vez y no hemos tocado ninguna pestaña, seleccionamos la primera por defecto
-        if ($subcategoria_activa == null && !empty($data['pestañas'])) {
-            $subcategoria_activa = $data['pestañas'][0]['subcategoria'];
+        // Si se seleccionó una subcategoría específica, cargamos sus platillos
+        if ($subcategoria_activa !== null) {
+            $data['pestaña_activa'] = urldecode($subcategoria_activa);
+            $data['platillos'] = $platilloModel->where('id_categoria', $id_categoria)
+                                               ->where('subcategoria', $data['pestaña_activa'])
+                                               ->where('disponible', 1)
+                                               ->findAll();
+        } else {
+            // Si es null, el mesero está en el menú principal de subcategorías
+            $data['pestaña_activa'] = null;
+            $data['platillos'] = [];
         }
-        
-        // Decodificamos por si la URL tiene espacios (ej. "Cazuelas Calientes")
-        $data['pestaña_activa'] = urldecode($subcategoria_activa);
-
-        // Traemos SOLO los platillos de la pestaña seleccionada
-        $data['platillos'] = $platilloModel->where('id_categoria', $id_categoria)
-                                           ->where('subcategoria', $data['pestaña_activa'])
-                                           ->where('disponible', 1)
-                                           ->findAll();
 
         return view('pos/platillos', $data);
     }
+    public function seleccionar_platillo($id_mesa, $id_platillo)
+    {
+        $platilloModel = new PlatilloModel();
+        $platillo = $platilloModel->find($id_platillo);
+
+        // Si el platillo tiene id_padre, es una variante
+        // Si no, es el platillo principal que tiene opciones
+        $data['platillo'] = $platillo;
+        
+        // Buscamos sus variantes o sus opciones de tamaño
+        $data['opciones'] = $platilloModel->where('id_padre', $id_platillo)->findAll();
+
+        return view('pos/personalizar', $data);
+    }
+    public function menu_principal($id_mesa) {
+    $mesaModel = new MesaModel();
+    // ¡Asegurate de pasar $mesa a la vista!
+    $data['mesa'] = $mesaModel->find($id_mesa);
+    
+    return view('pos/menu_principal', $data); 
+}
 }
