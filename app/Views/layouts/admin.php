@@ -33,10 +33,6 @@
                Platillos
             </a>
 
-            <a href="<?= base_url('mesas') ?>" 
-               class="block px-4 py-2 rounded-lg transition-colors <?= ($uri == 'mesas') ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' ?>">
-               Mesas
-            </a>
         </nav>
 
         <div class="p-4 border-t border-gray-800">
