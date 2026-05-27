@@ -36,7 +36,13 @@
         </nav>
 
         <div class="p-4 border-t border-gray-800">
-            <a href="#" class="block px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">
+            
+            <div class="mb-3 px-4 text-xs text-gray-400 uppercase tracking-wider">
+                Operador: <br>
+                <span class="text-[#00B4D8] font-bold text-sm"><?= session()->get('nombre') ?></span>
+            </div>
+            
+            <a href="<?= base_url('login/salir') ?>" class="block px-4 py-2 text-sm text-red-400 hover:bg-gray-800 hover:text-red-300 rounded-lg transition-colors">
                 Cerrar Sesión
             </a>
         </div>

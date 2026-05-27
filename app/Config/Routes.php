@@ -12,6 +12,10 @@ if (file_exists(SYSTEMPATH . 'Config/Routes.php')) {
  * @var RouteCollection $routes
  */
 
+$routes->get('/', 'Login::index'); // La ruta base ahora es el Login
+$routes->post('login/ingresar', 'Login::ingresar');
+$routes->get('login/salir', 'Login::salir');
+
 // --- RUTAS DE USUARIOS ---
 $routes->get('usuarios', 'Usuarios::index');
 $routes->get('usuarios/agregar', 'Usuarios::agregar');
@@ -35,6 +39,3 @@ $routes->post('platillos/guardar', 'Platillos::guardar');
 $routes->get('platillos/editar/(:num)', 'Platillos::editar/$1');
 $routes->post('platillos/actualizar/(:num)', 'Platillos::actualizar/$1');
 $routes->get('platillos/eliminar/(:num)', 'Platillos::eliminar/$1');
-
-// Ruta principal
-$routes->get('/', 'Usuarios::index');
