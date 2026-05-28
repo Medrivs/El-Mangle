@@ -8,6 +8,6 @@ class DetalleComandaModel extends Model
     protected $primaryKey = 'id_detalle_comanda';
     protected $allowedFields = [
         'id_comanda', 'id_platillo', 'cantidad', 
-        'precio_unitario', 'comentarios', 'impresiones_realizadas'
+        'precio_unitario', 'comentarios', 'impresiones_realizadas', 'estado'
     ];
 }

@@ -48,9 +48,22 @@
                 <h3 class="text-xs font-bold text-[#1565C0] tracking-widest uppercase mb-6">Platillos en <?= $pestaña_activa ?>:</h3>
                 
                 <div class="grid grid-cols-3 gap-4">
-                    <?php foreach($platillos as $p): ?>
-                        <button onclick="abrirModal(<?= $p['id_platillo'] ?>, '<?= addslashes($p['nombre_platillo']) ?>', <?= $p['precio_venta'] ?>, '<?= addslashes($p['subcategoria']) ?>')" 
-                                class="bg-white p-5 rounded-2xl shadow-sm border-2 border-blue-50 hover:border-blue-500 text-center transition-all flex flex-col items-center justify-between h-44">
+                    <?php foreach($platillos as $p): 
+                        // Reglas de renderizado SoftRestaurant
+                        $onclickAction = "abrirModal(".$p['id_platillo'].", '".addslashes($p['nombre_platillo'])."', ".$p['precio_venta'].", '".addslashes($p['subcategoria'])."')";
+                        $cardClasses = "bg-white p-5 rounded-2xl shadow-sm border-2 border-blue-50 hover:border-blue-500 text-center transition-all flex flex-col items-center justify-between h-44 relative overflow-hidden";
+                        $badgeOverlay = "";
+
+                        if (isset($p['ingredientes_bloqueados']) && $p['ingredientes_bloqueados']) {
+                            $onclickAction = "alert('¡Agotado! Este platillo contiene insumos bloqueados por la cocina temporalmente.')";
+                            $cardClasses = "bg-gray-200/60 p-5 rounded-2xl shadow-sm border-2 border-gray-300 text-center flex flex-col items-center justify-between h-44 relative overflow-hidden opacity-50 cursor-not-allowed text-gray-400";
+                            $badgeOverlay = "<div class='absolute top-2 left-2 bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider shadow-md z-10'>Agotado</div>";
+                        } elseif (isset($p['ingredientes_alerta']) && $p['ingredientes_alerta']) {
+                            $badgeOverlay = "<div class='absolute top-2 left-2 bg-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider shadow-md z-10 animate-pulse'>⚠️ Poco Stock</div>";
+                        }
+                    ?>
+                        <button onclick="<?= $onclickAction ?>" class="<?= $cardClasses ?>">
+                            <?= $badgeOverlay ?>
                             <div class="text-3xl text-blue-500"><i class="fa-solid fa-martini-glass-citrus"></i></div>
                             <div class="font-bold text-[#0A1F3D] text-sm leading-tight line-clamp-2 my-2"><?= $p['nombre_platillo'] ?></div>
                             <div class="text-[#1565C0] font-black">$<?= number_format($p['precio_venta'], 2) ?></div>
@@ -58,6 +71,7 @@
                     <?php endforeach; ?>
                 </div>
             <?php endif; ?>
+            
         </div>
     </main>
 

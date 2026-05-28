@@ -56,12 +56,31 @@ class Login extends BaseController
         return redirect()->to(base_url('/'));
     }
 
-    private function rutaPorRol($id_rol)
+private function rutaPorRol($id_rol)
     {
         if ($id_rol == 1) {
-            return base_url('usuarios'); // El Admin va al Back-Office
+            // El Admin va al Back-Office
+            return base_url('usuarios'); 
+            
+        } elseif ($id_rol == 4) {
+            // El Chef (Rol 6) va directo a la pantalla de Cocina (KDS)
+            return base_url('chef/dashboard'); 
+            
         } else {
-            return base_url('pos'); // Meseros y Capitanes van al Punto de Venta (POS)
+            // Meseros, Capitanes y Cajeros van al Punto de Venta (POS)
+            return base_url('pos'); 
         }
+    }
+    
+    // =======================================================
+    // CERRAR SESIÓN Y DESTRUIR COMODINES DE MEMORIA
+    // =======================================================
+    public function logout()
+    {
+        // 1. Destruimos toda la sesion de PHP en el servidor
+        session()->destroy();
+
+        // 2. Redirigimos a la pantalla de login principal con un mensaje de éxito
+        return redirect()->to(base_url('/'))->with('success', 'Sesion cerrada de forma segura.');
     }
 }

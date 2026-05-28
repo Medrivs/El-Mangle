@@ -15,6 +15,7 @@ if (file_exists(SYSTEMPATH . 'Config/Routes.php')) {
 $routes->get('/', 'Login::index'); // La ruta base ahora es el Login
 $routes->post('login/ingresar', 'Login::ingresar');
 $routes->get('login/salir', 'Login::salir');
+$routes->get('logout', 'Login::logout');
 
 // --- RUTAS DEL PUNTO DE VENTA (POS) ---
 // --- RUTAS DEL PUNTO DE VENTA (POS) ---
@@ -52,3 +53,11 @@ $routes->post('platillos/guardar', 'Platillos::guardar');
 $routes->get('platillos/editar/(:num)', 'Platillos::editar/$1');
 $routes->post('platillos/actualizar/(:num)', 'Platillos::actualizar/$1');
 $routes->get('platillos/eliminar/(:num)', 'Platillos::eliminar/$1');
+
+// --- RUTAS DE CHEF ---
+$routes->get('chef/dashboard', 'Chef::dashboard');
+$routes->get('chef/marcar_listo/(:num)', 'Chef::marcar_listo/$1');
+$routes->get('chef/cambiar_estado/(:num)/(:any)', 'Chef::cambiar_estado/$1/$2');
+$routes->get('chef/toggle_advertencia/(:num)', 'Chef::toggle_advertencia/$1');
+$routes->get('chef/toggle_bloqueo/(:num)', 'Chef::toggle_bloqueo/$1');
+

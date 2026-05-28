@@ -72,15 +72,44 @@ public function filtrar($id_mesa, $id_categoria, $subcategoria_activa = null)
         $query = $db->query("SELECT DISTINCT subcategoria FROM Platillo WHERE id_categoria = ? AND disponible = 1", [$id_categoria]);
         $data['pestañas'] = $query->getResultArray();
 
-        // Si se seleccionó una subcategoría específica, cargamos sus platillos
+        // Si se seleccionó una subcategoría específica, cargamos sus platillos cruzando insumos
         if ($subcategoria_activa !== null) {
             $data['pestaña_activa'] = urldecode($subcategoria_activa);
-            $data['platillos'] = $platilloModel->where('id_categoria', $id_categoria)
-                                               ->where('subcategoria', $data['pestaña_activa'])
-                                               ->where('disponible', 1)
-                                               ->findAll();
+            
+            $platillosRaw = $platilloModel->where('id_categoria', $id_categoria)
+                                          ->where('subcategoria', $data['pestaña_activa'])
+                                          ->where('disponible', 1)
+                                          ->findAll();
+                                          
+            $data['platillos'] = [];
+            foreach ($platillosRaw as $p) {
+                // Buscamos todas las materias primas asociadas a la receta de este platillo
+                $ingredientes = $db->query("
+                    SELECT mp.bloqueado_manual, mp.alerta_manual, mp.stock_actual, mp.stock_minimo 
+                    FROM Receta r
+                    JOIN Materia_Prima mp ON mp.id_materia_prima = r.id_materia_prima
+                    WHERE r.id_platillo = ?
+                ", [$p['id_platillo']])->getResultArray();
+
+                $bloqueado = false;
+                $advertencia = false;
+
+                foreach ($ingredientes as $ing) {
+                    // Si el chef bloqueó el insumo, o el stock físico llegó a cero absoluto
+                    if ($ing['bloqueado_manual'] == 1 || $ing['stock_actual'] <= 0) {
+                        $bloqueado = true;
+                    }
+                    // Si el chef advirtió el insumo, o el stock cayó por debajo del mínimo de control
+                    if ($ing['alerta_manual'] == 1 || $ing['stock_actual'] <= $ing['stock_minimo']) {
+                        $advertencia = true;
+                    }
+                }
+
+                $p['ingredientes_bloqueados'] = $bloqueado;
+                $p['ingredientes_alerta'] = $advertencia;
+                $data['platillos'][] = $p;
+            }
         } else {
-            // Si es null, el mesero está en el menú principal de subcategorías
             $data['pestaña_activa'] = null;
             $data['platillos'] = [];
         }
@@ -144,6 +173,7 @@ public function filtrar($id_mesa, $id_categoria, $subcategoria_activa = null)
             }
 
             // Insertamos los detalles de los platillos
+           // Insertamos los detalles de los platillos
             foreach ($carrito as $item) {
                 $detalleModel->insert([
                     'id_comanda'            => $id_comanda,
@@ -151,8 +181,21 @@ public function filtrar($id_mesa, $id_categoria, $subcategoria_activa = null)
                     'cantidad'              => $item['cant'],
                     'precio_unitario'       => $item['precio'],
                     'comentarios'           => $item['nota'],
-                    'impresiones_realizadas'=> 0
+                    'impresiones_realizadas'=> 0,
+                    'estado'                => 'Pendiente' // El estado inicial para el KDS
                 ]);
+
+                // --- MAGIA DE INVENTARIO: DESCONTAMOS LAS RECETAS ---
+                // Buscamos qué materias primas usa este platillo
+                $recetas = $db->table('Receta')->where('id_platillo', $item['id'])->get()->getResultArray();
+                
+                foreach ($recetas as $r) {
+                    $cantidad_a_descontar = $r['cantidad_usada'] * $item['cant'];
+                    // Actualizamos el stock en la base de datos restando la cantidad
+                    $db->query("UPDATE Materia_Prima SET stock_actual = stock_actual - ? WHERE id_materia_prima = ?", 
+                        [$cantidad_a_descontar, $r['id_materia_prima']]
+                    );
+                }
             }
 
             if ($db->transStatus() === false) {
