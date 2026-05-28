@@ -57,17 +57,5 @@
     </main>
 
 <?= $this->include('pos/partials/carrito') ?>
-
-    <script src="<?= base_url('js/carrito.js') ?>"></script>
-    
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            // Verificamos si existe el carrito en el DOM antes de dibujar
-            if (document.getElementById('carrito-items')) {
-                dibujarCarrito();
-            }
-        });
-    </script>
-
 </body>
 </html>

@@ -23,6 +23,11 @@ $routes->get('pos/mesa/(:num)', 'Pos::mesa/$1');
 $routes->get('pos/filtrar/(:num)/(:num)', 'Pos::filtrar/$1/$2');
 $routes->get('pos/filtrar/(:num)/(:num)/(:any)', 'Pos::filtrar/$1/$2/$3'); // RUTA PARA LAS PESTAÑAS
 $routes->get('pos/seleccionar/(:num)/(:num)', 'Pos::seleccionar_platillo/$1/$2');
+$routes->get('pos/ver_comanda/(:num)', 'Pos::ver_comanda/$1');
+$routes->get('pos/imprimir_cuenta/(:num)', 'Pos::imprimir_cuenta/$1');
+
+// app/Config/Routes.php
+$routes->post('pos/enviar_orden', 'Pos::enviar_orden');
 
 // --- RUTAS DE USUARIOS ---
 $routes->get('usuarios', 'Usuarios::index');

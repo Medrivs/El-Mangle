@@ -22,6 +22,22 @@ class Pos extends BaseController
                                        ->where('activa', 1)->findAll();
         }
 
+        // --- CALCULO DE MÉTRICAS OPERATIVAS EN TIEMPO REAL ---
+        $db = \Config\Database::connect();
+        
+        // 1. Total de comandas/mesas que ha abierto este mesero en su turno
+        $queryMesas = $db->query("SELECT COUNT(id_comanda) as total FROM Comanda WHERE id_usuario = ?", [$id_usuario]);
+        $data['total_mesas_atendidas'] = $queryMesas->getRow()->total ?? 0;
+
+        // 2. Consumo total acumulado (Vendido) por este mesero
+        $queryConsumo = $db->query("
+            SELECT SUM(dc.cantidad * dc.precio_unitario) as total 
+            FROM Detalle_Comanda dc
+            JOIN Comanda c ON c.id_comanda = dc.id_comanda
+            WHERE c.id_usuario = ?
+        ", [$id_usuario]);
+        $data['consumo_total_mesero'] = $queryConsumo->getRow()->total ?? 0;
+
         return view('pos/mesas', $data);
     }
 
@@ -92,4 +108,126 @@ public function filtrar($id_mesa, $id_categoria, $subcategoria_activa = null)
     
     return view('pos/menu_principal', $data); 
 }
+// =======================================================
+    // 1. LÓGICA DE LA ORDEN Y BASE DE DATOS
+    // =======================================================
+    public function enviar_orden()
+    {
+        $db = \Config\Database::connect();
+        $comandaModel = new \App\Models\ComandaModel();
+        $detalleModel = new \App\Models\DetalleComandaModel();
+        $mesaModel = new \App\Models\MesaModel();
+
+        $db->transBegin();
+
+        try {
+            $id_mesa = $this->request->getPost('id_mesa');
+            $datos_json = $this->request->getPost('datos_carrito');
+            $carrito = json_decode($datos_json, true);
+
+            $mesa = $mesaModel->find($id_mesa);
+
+            // Si la mesa está libre, creamos una NUEVA comanda.
+            // Si está ocupada, le sumamos los platillos a la comanda existente.
+            if ($mesa['estado_mesa'] == 'Libre' || empty($mesa['estado_mesa'])) {
+                $id_comanda = $comandaModel->insert([
+                    'id_mesa'    => $id_mesa,
+                    'id_usuario' => session()->get('usuario_id') ?? 1, 
+                    'fecha_hora' => date('Y-m-d H:i:s')
+                ]);
+                // Cambiamos el estado a ROJO (Ocupada)
+                $mesaModel->update($id_mesa, ['estado_mesa' => 'Ocupada']);
+            } else {
+                // Buscamos la comanda actual de esa mesa (la última)
+                $comanda = $comandaModel->where('id_mesa', $id_mesa)->orderBy('id_comanda', 'DESC')->first();
+                $id_comanda = $comanda['id_comanda'];
+            }
+
+            // Insertamos los detalles de los platillos
+            foreach ($carrito as $item) {
+                $detalleModel->insert([
+                    'id_comanda'            => $id_comanda,
+                    'id_platillo'           => $item['id'],
+                    'cantidad'              => $item['cant'],
+                    'precio_unitario'       => $item['precio'],
+                    'comentarios'           => $item['nota'],
+                    'impresiones_realizadas'=> 0
+                ]);
+            }
+
+            if ($db->transStatus() === false) {
+                $db->transRollback();
+                return redirect()->back()->with('error', 'Error al procesar la orden.');
+            } else {
+                $db->transCommit();
+                // Redirigimos al historial de la cuenta en lugar de ir al mapa
+                return redirect()->to(base_url('pos/ver_comanda/' . $id_mesa))->with('success', 'Orden enviada a cocina.');
+            }
+
+        } catch (\Exception $e) {
+            $db->transRollback();
+            return redirect()->back()->with('error', 'Error: ' . $e->getMessage());
+        }
+    }
+
+    // =======================================================
+    // 2. VER HISTORIAL DE LA MESA (COMANDA)
+    // =======================================================
+    public function ver_comanda($id_mesa)
+    {
+        if (!session()->get('isLoggedIn')) return redirect()->to(base_url('/'));
+
+        $mesaModel = new \App\Models\MesaModel();
+        $comandaModel = new \App\Models\ComandaModel();
+        
+        $data['mesa'] = $mesaModel->find($id_mesa);
+        
+        // Obtener la última comanda de esta mesa
+        $comanda = $comandaModel->where('id_mesa', $id_mesa)->orderBy('id_comanda', 'DESC')->first();
+        
+        $data['detalles'] = [];
+        $data['total'] = 0;
+
+        if ($comanda) {
+            // Hacemos un JOIN con la tabla de platillos para saber el nombre
+            $db = \Config\Database::connect();
+            $data['detalles'] = $db->table('Detalle_Comanda dc')
+                                   ->select('dc.*, p.nombre_platillo')
+                                   ->join('Platillo p', 'p.id_platillo = dc.id_platillo')
+                                   ->where('dc.id_comanda', $comanda['id_comanda'])
+                                   ->get()->getResultArray();
+                                   
+            foreach($data['detalles'] as $d) {
+                $data['total'] += ($d['cantidad'] * $d['precio_unitario']);
+            }
+        }
+
+        return view('pos/comanda', $data);
+    }
+
+// =======================================================
+    // IMPRIMIR CUENTA (MÁXIMO 1 IMPRESIÓN POR SEGURIDAD)
+    // =======================================================
+    public function imprimir_cuenta($id_mesa)
+    {
+        if (!session()->get('isLoggedIn')) return redirect()->to(base_url('/'));
+
+        $mesaModel = new \App\Models\MesaModel();
+        $mesa = $mesaModel->find($id_mesa);
+
+        // CANDADO DE SEGURIDAD: Si el estado ya es 'Por Pagar', significa que ya se imprimió una vez
+        if ($mesa['estado_mesa'] === 'Por Pagar') {
+            return redirect()->to(base_url('pos/ver_comanda/'.$id_mesa))
+                             ->with('error', '¡Accion denegada! La cuenta de esta mesa ya fue impresa una vez. No se permite re-imprimir por politicas de seguridad.');
+        }
+
+        // Si es la primera vez, cambiamos el estado a AMARILLO (Por Pagar)
+        $mesaModel->update($id_mesa, ['estado_mesa' => 'Por Pagar']);
+
+        // [Aquí se ejecuta la lógica de tu ticketera física]
+
+        return redirect()->to(base_url('pos/ver_comanda/'.$id_mesa))
+                         ->with('success', 'Cuenta impresa de forma exitosa. Mesa bloqueada para caja.');
+    }
+
 }

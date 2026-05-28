@@ -61,31 +61,6 @@
         </div>
     </main>
 
-    <aside class="w-[380px] bg-white border-l border-blue-200 flex flex-col shadow-2xl shrink-0 h-full">
-        <div class="bg-[#0A1F3D] text-white p-4 font-bold text-center shrink-0">🛒 Orden de Mesa <?= $mesa['numero_mesa'] ?></div>
-        
-        <div id="carrito-items" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50/50">
-            <div class="text-center mt-10">
-                <i class="fa-solid fa-cart-shopping text-4xl text-gray-300 mb-3"></i>
-                <p class="text-gray-400 font-medium">Carrito vacio</p>
-            </div>
-        </div>
-
-        <div class="p-5 border-t border-gray-200 bg-white shrink-0">
-            <div class="flex justify-between font-black text-xl mb-4 text-[#0A1F3D]">
-                <span>Total:</span> <span id="total-txt">$0.00</span>
-            </div>
-            
-            <form id="form-orden" action="<?= base_url('pos/enviar_orden') ?>" method="POST">
-                <input type="hidden" name="id_mesa" value="<?= $mesa['id_mesa'] ?>">
-                <input type="hidden" name="datos_carrito" id="datos_carrito">
-                <button type="submit" id="btn-enviar" disabled class="w-full bg-[#1565C0] text-white font-black py-4 rounded-xl disabled:bg-gray-300 transition-colors uppercase tracking-widest text-sm">
-                    Enviar a Cocina
-                </button>
-            </form>
-        </div>
-    </aside>
-
     <dialog id="modalPlatillo" class="bg-white p-6 rounded-3xl shadow-2xl w-full max-w-md backdrop:bg-black/60 backdrop:backdrop-blur-sm">
         <h3 id="modalNombre" class="font-black text-xl text-[#0A1F3D] mb-4 border-b border-gray-100 pb-3">Personalizar</h3>
         
@@ -129,142 +104,12 @@
         <div class="flex gap-3">
             <button onclick="document.getElementById('modalPlatillo').close()" class="w-1/3 bg-gray-200 hover:bg-gray-300 text-gray-700 py-4 rounded-xl font-black transition">Cancelar</button>
             <button onclick="guardarAlCarrito()" class="w-2/3 bg-[#1565C0] hover:bg-blue-700 text-white py-4 rounded-xl font-black shadow-lg shadow-blue-500/30 transition flex justify-center items-center gap-2">
-                <i class="fa-solid fa-plus"></i> Anadir a Orden
+                <i class="fa-solid fa-plus"></i> Añadir a Orden
             </button>
         </div>
     </dialog>
 
-    <script>
-        // LA MAGIA: Creamos una llave única para la memoria de esta mesa en especifico
-        const MESA_ID = <?= $mesa['id_mesa'] ?>;
-        const STORAGE_KEY = 'carrito_mangle_mesa_' + MESA_ID;
+    <?= $this->include('pos/partials/carrito') ?> 
 
-        // Al iniciar, buscamos si ya había algo guardado en la memoria de esta mesa
-        let carrito = JSON.parse(sessionStorage.getItem(STORAGE_KEY)) || [];
-        let pActual = {};
-
-        // Apenas cargue la página, dibujamos el carrito de inmediato
-        window.onload = function() {
-            dibujarCarrito();
-        };
-
-        function abrirModal(id, nombre, precio, subcategoria) {
-            pActual = { id: id, nombre: nombre, precio: parseFloat(precio), subcategoria: subcategoria };
-            
-            document.getElementById('modalNombre').innerText = nombre;
-            document.getElementById('modalCant').value = 1;
-            
-            let inputNota = document.getElementById('modalNota');
-            inputNota.value = ''; 
-            
-            const subDulces = ['Pasteles', 'Flanes', 'Postres', 'Helados', 'Cafeteria'];
-            const subBebidas = ['Mixologia', 'Mocktails', 'Clasica', 'Spritz', 'Cervezas', 'Aguas Frescas', 'Refrescos', 'Destilados', 'Vinos'];
-            
-            if (subDulces.includes(subcategoria)) {
-                inputNota.placeholder = "Ej. Para llevar, extra chocolate...";
-            } else if (subBebidas.includes(subcategoria)) {
-                inputNota.placeholder = "Ej. Sin hielo, en vaso de plastico...";
-            } else {
-                inputNota.placeholder = "Ej. Sin cebolla, extra limon...";
-            }
-
-            document.querySelector('input[name="tamano"][value="Mediano"]').checked = true;
-            document.querySelector('input[name="proteina"][value="Solo Camaron"]').checked = true;
-
-            let divTamano = document.getElementById('seccion-tamano');
-            let divProteina = document.getElementById('seccion-proteina');
-            const requiereOpciones = ['Cocteles', 'Botanas', 'Cazuelas', 'Aguachiles'];
-
-            if (requiereOpciones.includes(subcategoria)) {
-                divTamano.classList.remove('hidden');
-                divProteina.classList.remove('hidden');
-            } else {
-                divTamano.classList.add('hidden');
-                divProteina.classList.add('hidden');
-            }
-
-            document.getElementById('modalPlatillo').showModal();
-        }
-
-        function guardarAlCarrito() {
-            let cant = parseInt(document.getElementById('modalCant').value);
-            let nota = document.getElementById('modalNota').value;
-
-            let precioFinal = pActual.precio;
-            let nombreFinal = pActual.nombre;
-
-            const requiereOpciones = ['Cocteles', 'Botanas', 'Cazuelas', 'Aguachiles'];
-
-            if (requiereOpciones.includes(pActual.subcategoria)) {
-                let tamano = document.querySelector('input[name="tamano"]:checked').value;
-                let proteina = document.querySelector('input[name="proteina"]:checked').value;
-                
-                if (tamano === 'Grande') {
-                    if (pActual.subcategoria === 'Cocteles') precioFinal += 46;     
-                    if (pActual.subcategoria === 'Botanas') precioFinal += 59;      
-                    if (pActual.subcategoria === 'Aguachiles') precioFinal += 55;   
-                }
-                nombreFinal += ` (${tamano}) - ${proteina}`;
-            }
-
-            carrito.push({
-                nombre: nombreFinal,
-                precio: precioFinal, 
-                cant: cant, 
-                nota: nota
-            });
-
-            // GUARDAR ESTADO: Metemos el carrito actualizado a la memoria del navegador
-            sessionStorage.setItem(STORAGE_KEY, JSON.stringify(carrito));
-
-            document.getElementById('modalPlatillo').close();
-            dibujarCarrito();
-        }
-
-        function quitar(index) {
-            carrito.splice(index, 1);
-            // GUARDAR ESTADO: Si borra algo, actualizamos la memoria también
-            sessionStorage.setItem(STORAGE_KEY, JSON.stringify(carrito));
-            dibujarCarrito();
-        }
-
-        function dibujarCarrito() {
-            let html = '';
-            let total = 0;
-
-            carrito.forEach((c, index) => {
-                let subtotal = c.precio * c.cant;
-                total += subtotal;
-                
-                html += `
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-blue-100 relative">
-                    <div class="pr-6">
-                        <div class="font-bold text-sm text-[#0A1F3D] leading-tight">${c.nombre}</div>
-                        <div class="text-[#1565C0] font-black mt-1">$${subtotal.toFixed(2)}</div>
-                    </div>
-                    <div class="flex justify-between items-end mt-2">
-                        <span class="text-xs font-semibold text-gray-500">$${c.precio.toFixed(2)} x ${c.cant} ${c.nota ? '<br><span class="text-orange-500 bg-orange-50 px-1 rounded inline-block mt-1">💬 '+c.nota+'</span>' : ''}</span>
-                    </div>
-                    <button type="button" onclick="quitar(${index})" class="absolute top-3 right-3 text-red-300 hover:text-red-600 bg-red-50 w-6 h-6 flex items-center justify-center rounded transition">
-                        <i class="fa-solid fa-xmark text-xs"></i>
-                    </button>
-                </div>`;
-            });
-
-            if(carrito.length === 0){
-                html = `<div class="text-center mt-10"><i class="fa-solid fa-cart-shopping text-4xl text-gray-300 mb-3"></i><p class="text-gray-400 font-medium">Carrito vacio</p></div>`;
-            }
-
-            document.getElementById('carrito-items').innerHTML = html;
-            document.getElementById('total-txt').innerText = '$' + total.toFixed(2);
-            document.getElementById('datos_carrito').value = JSON.stringify(carrito);
-            document.getElementById('btn-enviar').disabled = carrito.length === 0;
-        }
-
-        // LIMPIAR MEMORIA: Si presiona "Enviar a Cocina", destruimos la memoria para vaciar el carrito
-        document.getElementById('form-orden').addEventListener('submit', function() {
-            sessionStorage.removeItem(STORAGE_KEY);
-        });
-    </script>
 </body>
 </html>
