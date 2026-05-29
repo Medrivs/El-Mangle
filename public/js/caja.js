@@ -1,6 +1,4 @@
-// ==========================================
-// MÓDULO DE CAJA - LÓGICA DE COBRO Y CORTE
-// ==========================================
+// public/js/caja.js
 
 let porcentajeActual = 0;
 let montoPropina = 0;
@@ -9,7 +7,6 @@ let metodoPago = 'efectivo';
 let stringRecibido = "";
 let totalRecibido = 0;
 
-// Inicializador que lee los datos desde PHP
 function inicializarCaja() {
     if (typeof CONFIG_CAJA !== 'undefined' && CONFIG_CAJA.consumoTotal > 0) {
         granTotal = CONFIG_CAJA.consumoTotal;
@@ -17,9 +14,6 @@ function inicializarCaja() {
     }
 }
 
-// ==========================================
-// 1. LÓGICA DE COBRO Y CALCULADORA
-// ==========================================
 function setPropina(porcentaje) {
     document.getElementById('input_propina_custom').value = ''; 
     ejecutarCalculoPropina(porcentaje);
@@ -89,9 +83,9 @@ function tecla(val) {
 }
 
 function calcularCambio() {
-    if (!document.getElementById('div_calculo')) return;
-
     let divCalculo = document.getElementById('div_calculo');
+    if(!divCalculo) return;
+    
     let btnLiquidar = document.getElementById('btn_liquidar');
     let inputMetodo = document.getElementById('input_metodo');
     let inputEfe = document.getElementById('input_efectivo');
@@ -103,9 +97,10 @@ function calcularCambio() {
         inputMetodo.value = 'tarjeta';
         inputEfe.value = 0;
         inputTar.value = granTotal;
-        divCalculo.innerHTML = `<div class="bg-blue-50 text-blue-600 py-1 px-2 rounded font-bold border border-blue-100">Cobro total a Tarjeta</div>`;
+        divCalculo.innerHTML = `<div class="bg-blue-50 text-blue-600 py-1 px-2 rounded font-bold border border-blue-100">Cobro total a Tarjeta (Terminal)</div>`;
         btnLiquidar.innerHTML = `Liquidar en Tarjeta <i class="fa-solid fa-credit-card"></i>`;
         btnLiquidar.className = "w-full bg-blue-600 hover:bg-blue-800 text-white font-black text-sm py-4 rounded-xl transition shadow-md uppercase tracking-widest flex justify-center items-center gap-2";
+
     } else if (totalRecibido === 0) {
         inputMetodo.value = 'efectivo';
         inputEfe.value = granTotal;
@@ -113,6 +108,7 @@ function calcularCambio() {
         divCalculo.innerHTML = '';
         btnLiquidar.innerHTML = `Liquidar y Liberar Mesa <i class="fa-solid fa-check-double"></i>`;
         btnLiquidar.className = "w-full bg-[#EEF2F6] text-[#64748B] hover:bg-[#0A1F3D] hover:text-white font-black text-sm py-4 rounded-xl transition shadow-sm uppercase tracking-widest flex justify-center items-center gap-2";
+
     } else if (diferencia < 0) {
         let cobroTarjeta = Math.abs(diferencia);
         inputMetodo.value = 'mixto';
@@ -121,6 +117,7 @@ function calcularCambio() {
         divCalculo.innerHTML = `<div class="bg-orange-50 text-orange-600 py-1 px-2 rounded font-bold border border-orange-100">Pasar Terminal por: $${cobroTarjeta.toFixed(2)}</div>`;
         btnLiquidar.innerHTML = `Liquidar ($${totalRecibido} Efe + $${cobroTarjeta.toFixed(2)} Tarj) <i class="fa-solid fa-cash-register"></i>`;
         btnLiquidar.className = "w-full bg-orange-500 hover:bg-orange-600 text-white font-black text-sm py-4 rounded-xl transition shadow-md uppercase tracking-widest flex justify-center items-center gap-2";
+
     } else {
         inputMetodo.value = 'efectivo';
         inputEfe.value = granTotal;
@@ -131,43 +128,35 @@ function calcularCambio() {
     }
 }
 
-// ==========================================
-// 2. LÓGICA DE AUDITORÍA Y CORTE DE CAJA
-// ==========================================
+// Lógica de Auditoría
 function abrirModalCorte() {
     document.getElementById('modalCorteCaja').showModal();
     calcularAuditoria();
 }
 
 function calcularAuditoria() {
-    // Leer valores de los inputs
     let fondo = parseFloat(document.getElementById('fondo_inicial').value) || 0;
     let fisico = parseFloat(document.getElementById('efectivo_fisico').value) || 0;
     
-    // El efectivo total esperado es el Fondo Inicial + Las ventas en efectivo del turno
-    let ventasEfectivo = CONFIG_CAJA.ventasEfectivo || 0;
-    let esperado = fondo + ventasEfectivo;
-    
+    let esperado = fondo + CONFIG_CAJA.ventasEfectivoDia;
     let diferencia = fisico - esperado;
     let lblDif = document.getElementById('lbl_diferencia');
 
     lblDif.innerText = diferencia.toFixed(2);
 
-    // Formato de colores y signo
     if (diferencia < 0) {
-        lblDif.classList.remove('text-[#00B4D8]', 'text-gray-400');
+        lblDif.classList.remove('text-[#00A97F]', 'text-[#00B4D8]', 'text-gray-400');
         lblDif.classList.add('text-red-500');
     } else {
         lblDif.innerText = (diferencia > 0 ? '+' : '') + diferencia.toFixed(2);
         lblDif.classList.remove('text-red-500', 'text-gray-400');
-        lblDif.classList.add('text-[#00A97F]'); // Verde tipo WhatsApp de tu diseño
+        lblDif.classList.add('text-[#00A97F]'); 
     }
 
-    // Actualizar hidden inputs para mandar al backend
     document.getElementById('input_fondo').value = fondo;
     document.getElementById('input_fisico').value = fisico;
     document.getElementById('input_dif').value = diferencia;
 }
 
-// Auto-Iniciar cuando carga el DOM
-document.addEventListener("DOMContentLoaded", inicializarCaja);
+// Iniciar al cargar
+document.addEventListener('DOMContentLoaded', inicializarCaja);

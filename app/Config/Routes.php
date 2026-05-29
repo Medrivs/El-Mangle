@@ -16,6 +16,7 @@ $routes->get('/', 'Login::index'); // La ruta base ahora es el Login
 $routes->post('login/ingresar', 'Login::ingresar');
 $routes->get('login/salir', 'Login::salir');
 $routes->get('logout', 'Login::logout');
+$routes->get('login/logout', 'Login::logout');
 
 // --- RUTAS DEL PUNTO DE VENTA (POS) ---
 // --- RUTAS DEL PUNTO DE VENTA (POS) ---

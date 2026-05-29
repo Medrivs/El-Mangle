@@ -59,23 +59,17 @@ class Login extends BaseController
 private function rutaPorRol($id_rol)
     {
         if ($id_rol == 1) {
-            // Rol 1: Administrador -> Back-Office
-            return base_url('usuarios'); 
-            
+            return base_url('usuarios'); // Admin
+        } elseif ($id_rol == 2) {
+            return base_url('capitan'); // Capitán -> ¡NUEVA RUTA!
         } elseif ($id_rol == 4) {
-            // Rol 4: Chef -> Pantalla de Cocina (KDS)
-            return base_url('chef/dashboard'); 
-            
+            return base_url('chef/dashboard'); // Chef
         } elseif ($id_rol == 5) {
-            // Rol 5: Cajero -> Módulo de Caja
-            return base_url('caja');
-            
+            return base_url('caja'); // Cajero
         } else {
-            // Rol 2 (Capitán) y Rol 3 (Mesero) caen aquí -> Punto de Venta (POS)
-            return base_url('pos'); 
+            return base_url('pos'); // Mesero (Rol 3)
         }
     }
-    
     // =======================================================
     // CERRAR SESIÓN Y DESTRUIR COMODINES DE MEMORIA
     // =======================================================
