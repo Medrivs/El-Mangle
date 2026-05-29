@@ -59,15 +59,19 @@ class Login extends BaseController
 private function rutaPorRol($id_rol)
     {
         if ($id_rol == 1) {
-            // El Admin va al Back-Office
+            // Rol 1: Administrador -> Back-Office
             return base_url('usuarios'); 
             
         } elseif ($id_rol == 4) {
-            // El Chef (Rol 6) va directo a la pantalla de Cocina (KDS)
+            // Rol 4: Chef -> Pantalla de Cocina (KDS)
             return base_url('chef/dashboard'); 
             
+        } elseif ($id_rol == 5) {
+            // Rol 5: Cajero -> Módulo de Caja
+            return base_url('caja');
+            
         } else {
-            // Meseros, Capitanes y Cajeros van al Punto de Venta (POS)
+            // Rol 2 (Capitán) y Rol 3 (Mesero) caen aquí -> Punto de Venta (POS)
             return base_url('pos'); 
         }
     }

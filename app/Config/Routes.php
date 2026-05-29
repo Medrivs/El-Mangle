@@ -61,3 +61,11 @@ $routes->get('chef/cambiar_estado/(:num)/(:any)', 'Chef::cambiar_estado/$1/$2');
 $routes->get('chef/toggle_advertencia/(:num)', 'Chef::toggle_advertencia/$1');
 $routes->get('chef/toggle_bloqueo/(:num)', 'Chef::toggle_bloqueo/$1');
 
+// =======================================================
+// RUTAS DEL MÓDULO DE CAJA
+// =======================================================
+$routes->get('caja', 'Caja::index');
+$routes->get('caja/index/(:num)', 'Caja::index/$1');
+$routes->post('caja/liquidar', 'Caja::liquidar');
+$routes->post('caja/corte_caja', 'Caja::corte_caja');
+
