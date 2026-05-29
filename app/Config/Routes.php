@@ -70,3 +70,14 @@ $routes->get('caja/index/(:num)', 'Caja::index/$1');
 $routes->post('caja/liquidar', 'Caja::liquidar');
 $routes->post('caja/corte_caja', 'Caja::corte_caja');
 
+// =======================================================
+// RUTAS DEL CAPITÁN
+// =======================================================
+$routes->get('capitan', 'Capitan::index');
+$routes->post('capitan/transferir', 'Capitan::transferir');
+$routes->get('capitan/reabrir/(:num)', 'Capitan::reabrir/$1');
+// Rutas para ver el detalle de la mesa y cancelar platillos
+$routes->get('capitan/detalle_orden/(:num)/(:any)', 'Capitan::detalle_orden/$1/$2');
+$routes->post('capitan/cancelar_item', 'Capitan::cancelar_item');
+$routes->post('capitan/ejecutar_division', 'Capitan::ejecutar_division');
+
