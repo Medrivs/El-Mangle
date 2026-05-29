@@ -73,12 +73,34 @@ function tecla(val) {
     if (val === 'back') {
         stringRecibido = stringRecibido.slice(0, -1);
     } else {
-        if(stringRecibido === "" && val === "00") return;
-        stringRecibido += val;
+        // 1. Evitar que pongan más de un punto decimal
+        if (val === '.' && stringRecibido.includes('.')) return;
+        
+        // 2. Si empiezan escribiendo un punto, que el sistema ponga "0." automático
+        if (val === '.' && stringRecibido === "") {
+            stringRecibido = "0.";
+        } else {
+            // 3. Evitar ceros a la izquierda sin punto (ej. "05")
+            if (stringRecibido === "0" && val !== ".") {
+                stringRecibido = val;
+            } else {
+                // 4. Limitar a máximo 2 decimales (para que no escriban $150.555)
+                if (stringRecibido.includes('.')) {
+                    let partes = stringRecibido.split('.');
+                    if (partes[1].length >= 2) return; 
+                }
+                stringRecibido += val;
+            }
+        }
     }
 
-    totalRecibido = parseInt(stringRecibido) || 0;
-    document.getElementById('lbl_recibido').innerText = '$' + totalRecibido;
+    // Convertir el texto a decimal (parseFloat en lugar de parseInt)
+    totalRecibido = parseFloat(stringRecibido) || 0;
+    
+    // Mostrar en pantalla exactamente lo que el usuario escribe (para que vea el punto)
+    document.getElementById('lbl_recibido').innerText = stringRecibido === "" ? '$0' : '$' + stringRecibido;
+    
+    // Ejecutar la matemática del cambio
     calcularCambio();
 }
 

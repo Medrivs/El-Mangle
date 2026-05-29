@@ -123,7 +123,7 @@
                                 <span class="font-bold text-gray-500 text-xs">Recibido</span><span class="bg-green-100 text-green-700 font-black px-3 py-1 rounded-lg text-xl" id="lbl_recibido">$0</span>
                             </div>
                             <div class="grid grid-cols-3 gap-2 flex-1">
-                                <?php foreach([1,2,3,4,5,6,7,8,9,'00',0] as $num): ?>
+                                <?php foreach([1,2,3,4,5,6,7,8,9,'.',0] as $num): ?>
                                     <button type="button" onclick="tecla('<?= $num ?>')" class="h-full bg-gray-50 hover:bg-gray-200 rounded-xl font-bold text-xl text-[#0A1F3D] transition shadow-sm"><?= $num ?></button>
                                 <?php endforeach; ?>
                                 <button type="button" onclick="tecla('back')" class="h-full bg-red-50 hover:bg-red-100 text-red-500 rounded-xl font-bold text-xl transition shadow-sm"><i class="fa-solid fa-delete-left"></i></button>
@@ -159,6 +159,6 @@
         };
     </script>
     
-    <script src="<?= base_url('js/caja.js') ?>"></script>
+<script src="<?= base_url('js/caja.js?v=2') ?>"></script>
 </body>
 </html>
