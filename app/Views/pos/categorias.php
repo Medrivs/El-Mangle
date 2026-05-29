@@ -10,12 +10,17 @@
 
     <main class="flex-1 flex flex-col min-w-0">
         
-        <header class="bg-[#0A1F3D] text-white p-4 flex justify-between items-center shadow-md shrink-0">
+        <header class="<?= $bg_header ?? 'bg-[#0A1F3D]' ?> text-white p-4 flex justify-between items-center shadow-md shrink-0 transition-colors">
             <div class="flex items-center gap-4">
-                <a href="<?= base_url('pos') ?>" class="bg-blue-800 hover:bg-blue-700 p-2 px-4 rounded-xl font-bold text-sm transition">
-                    <i class="fa-solid fa-arrow-left mr-1"></i> Regresar a Mesas
+                <a href="<?= $ruta_volver ?? base_url('pos') ?>" class="bg-white/10 hover:bg-white/20 p-2 px-4 rounded-xl font-bold text-sm transition flex items-center">
+                    <i class="fa-solid fa-arrow-left mr-2"></i> Regresar a Mesas
                 </a>
-                <span class="text-xl font-bold border-l border-gray-600 pl-6 tracking-tight">NUEVA ORDEN</span>
+                <span class="text-xl font-bold border-l border-white/20 pl-6 tracking-tight flex items-center gap-2">
+                    NUEVA ORDEN
+                    <?php if(isset($es_capitan) && $es_capitan): ?>
+                        <span class="bg-orange-500 text-[10px] px-2 py-1 rounded uppercase tracking-widest font-black ml-2">Modo Capitán</span>
+                    <?php endif; ?>
+                </span>
             </div>
             <div class="text-right">
                 <div class="font-bold text-lg">Mesa <?= $mesa['numero_mesa'] ?></div>

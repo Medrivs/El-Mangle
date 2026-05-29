@@ -9,19 +9,24 @@
 <body class="bg-[#EFF6FF] flex h-screen w-full overflow-hidden font-sans">
 
     <main class="flex-1 min-w-0 flex flex-col h-full overflow-hidden">
-        <header class="bg-[#0A1F3D] text-white p-4 flex gap-4 items-center shrink-0">
+        <header class="<?= $bg_header ?? 'bg-[#0A1F3D]' ?> text-white p-4 flex gap-4 items-center shrink-0 transition-colors">
             <?php if ($pestaña_activa === null): ?>
-                <a href="<?= base_url('pos/mesa/'.$mesa['id_mesa']) ?>" class="bg-blue-800 hover:bg-blue-700 p-2 px-4 rounded-xl font-bold text-sm transition">
-                    <i class="fa-solid fa-arrow-left mr-1"></i> Volver a Menu Principal
+                <a href="<?= base_url('pos/mesa/'.$mesa['id_mesa']) ?>" class="bg-white/10 hover:bg-white/20 p-2 px-4 rounded-xl font-bold text-sm transition">
+                    <i class="fa-solid fa-arrow-left mr-1"></i> Volver a Menu
                 </a>
             <?php else: ?>
-                <a href="<?= base_url('pos/filtrar/'.$mesa['id_mesa'].'/'.$categoria['id_categoria']) ?>" class="bg-orange-600 hover:bg-orange-700 p-2 px-4 rounded-xl font-bold text-sm transition">
-                    <i class="fa-solid fa-container-storage mr-1"></i> ← Ver todas las Subcategorias
+                <a href="<?= base_url('pos/filtrar/'.$mesa['id_mesa'].'/'.$categoria['id_categoria']) ?>" class="bg-orange-600 hover:bg-orange-700 p-2 px-4 rounded-xl font-bold text-sm transition shadow-md shadow-orange-500/20">
+                    <i class="fa-solid fa-layer-group mr-1"></i> ← Ver Categorías
                 </a>
             <?php endif; ?>
-            <h1 class="font-black text-lg tracking-wide uppercase">
+            
+            <h1 class="font-black text-lg tracking-wide uppercase flex items-center">
                 <?= $categoria['nombre_categoria'] ?> 
-                <?= $pestaña_activa ? "› <span class='text-[#00B4D8]'>".$pestaña_activa."</span>" : "" ?>
+                <?= $pestaña_activa ? " <span class='mx-2 opacity-50'>›</span> <span class='text-[#00B4D8]'>".$pestaña_activa."</span>" : "" ?>
+                
+                <?php if(isset($es_capitan) && $es_capitan): ?>
+                    <span class="bg-orange-500 text-[10px] px-2 py-1 rounded-md uppercase tracking-widest font-black ml-4 shadow-sm">Modo Capitán</span>
+                <?php endif; ?>
             </h1>
         </header>
 

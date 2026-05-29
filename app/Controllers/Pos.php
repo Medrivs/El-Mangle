@@ -1,11 +1,25 @@
 <?php
 namespace App\Controllers;
 use App\Models\MesaModel;
-use App\Models\PlatilloModel; // Agregamos el modelo de los platillos
+use App\Models\PlatilloModel;
 use App\Models\CategoriaModel;
 
 class Pos extends BaseController
 {
+    // =======================================================
+    // FUNCIÓN MÁGICA PARA MANTENER LA INTERFAZ DEL CAPITÁN
+    // =======================================================
+    private function _getUIConfig() {
+        $id_rol = session()->get('id_rol');
+        return [
+            // Si es Capitán (2), fondo muy oscuro. Si es mesero, azul normal.
+            'bg_header'   => ($id_rol == 2) ? 'bg-[#0A1F3D]' : 'bg-[#15325A]',
+            // Si es Capitán (2), el botón de volver lo manda a su mapa global
+            'ruta_volver' => ($id_rol == 2) ? base_url('capitan') : base_url('pos'),
+            'es_capitan'  => ($id_rol == 2)
+        ];
+    }
+
     public function index()
     {
         if (!session()->get('isLoggedIn')) {
@@ -15,21 +29,27 @@ class Pos extends BaseController
         $mesaModel = new MesaModel();
         $id_usuario = session()->get('id_usuario');
 
+        // ORDENAMIENTO INTELIGENTE: Ordena por la longitud primero (para que "10" vaya después del "9") 
+        // y luego alfabéticamente (para que "2-B" vaya después de "2").
         if (session()->get('id_rol') == 1 || session()->get('id_rol') == 2) {
-            $data['mesas'] = $mesaModel->where('activa', 1)->findAll();
+            $data['mesas'] = $mesaModel->where('activa', 1)
+                                       ->orderBy('LENGTH(numero_mesa)', 'ASC')
+                                       ->orderBy('numero_mesa', 'ASC')
+                                       ->findAll();
         } else {
             $data['mesas'] = $mesaModel->where('id_usuario_mesero', $id_usuario)
-                                       ->where('activa', 1)->findAll();
+                                       ->where('activa', 1)
+                                       ->orderBy('LENGTH(numero_mesa)', 'ASC')
+                                       ->orderBy('numero_mesa', 'ASC')
+                                       ->findAll();
         }
 
         // --- CALCULO DE MÉTRICAS OPERATIVAS EN TIEMPO REAL ---
         $db = \Config\Database::connect();
         
-        // 1. Total de comandas/mesas que ha abierto este mesero en su turno
         $queryMesas = $db->query("SELECT COUNT(id_comanda) as total FROM Comanda WHERE id_usuario = ?", [$id_usuario]);
         $data['total_mesas_atendidas'] = $queryMesas->getRow()->total ?? 0;
 
-        // 2. Consumo total acumulado (Vendido) por este mesero
         $queryConsumo = $db->query("
             SELECT SUM(dc.cantidad * dc.precio_unitario) as total 
             FROM Detalle_Comanda dc
@@ -41,8 +61,7 @@ class Pos extends BaseController
         return view('pos/mesas', $data);
     }
 
-    // NUEVA FUNCIÓN: Abre la pantalla para tomar pedido
-   public function mesa($id_mesa)
+    public function mesa($id_mesa)
     {
         if (!session()->get('isLoggedIn')) return redirect()->to(base_url('/'));
 
@@ -50,13 +69,15 @@ class Pos extends BaseController
         $catModel  = new CategoriaModel();
 
         $data['mesa'] = $mesaModel->find($id_mesa);
-        $data['categorias'] = $catModel->findAll(); // Traemos Barra Fría, Bebidas, etc.
+        $data['categorias'] = $catModel->findAll();
+        
+        // Inyectamos las variables de interfaz
+        $data = array_merge($data, $this->_getUIConfig());
 
         return view('pos/categorias', $data);
     }
-    // Paso 2: Ver platillos de la categoría seleccionada
-// Paso 2: Ver platillos divididos por pestañas (subcategorías)
-public function filtrar($id_mesa, $id_categoria, $subcategoria_activa = null)
+
+    public function filtrar($id_mesa, $id_categoria, $subcategoria_activa = null)
     {
         if (!session()->get('isLoggedIn')) return redirect()->to(base_url('/'));
 
@@ -66,6 +87,9 @@ public function filtrar($id_mesa, $id_categoria, $subcategoria_activa = null)
 
         $data['mesa'] = $mesaModel->find($id_mesa);
         $data['categoria'] = $catModel->find($id_categoria);
+        
+        // Inyectamos las variables de interfaz
+        $data = array_merge($data, $this->_getUIConfig());
         
         $db = \Config\Database::connect();
         $query = $db->query("SELECT DISTINCT subcategoria FROM Platillo WHERE id_categoria = ? AND disponible = 1", [$id_categoria]);
@@ -81,7 +105,6 @@ public function filtrar($id_mesa, $id_categoria, $subcategoria_activa = null)
                                           
             $data['platillos'] = [];
             foreach ($platillosRaw as $p) {
-                // Consulta directa y sencilla
                 $ingredientes = $db->query("
                     SELECT mp.nombre_producto, mp.bloqueado_manual, mp.alerta_manual, mp.stock_actual, mp.stock_minimo 
                     FROM Receta r
@@ -117,30 +140,25 @@ public function filtrar($id_mesa, $id_categoria, $subcategoria_activa = null)
     public function seleccionar_platillo($id_mesa, $id_platillo)
     {
         $platilloModel = new PlatilloModel();
-        $platillo = $platilloModel->find($id_platillo);
-
-        // Si el platillo tiene id_padre, es una variante
-        // Si no, es el platillo principal que tiene opciones
-        $data['platillo'] = $platillo;
-        
-        // Buscamos sus variantes o sus opciones de tamaño
+        $data['platillo'] = $platilloModel->find($id_platillo);
         $data['opciones'] = $platilloModel->where('id_padre', $id_platillo)->findAll();
+
+        // Inyectamos las variables de interfaz
+        $data = array_merge($data, $this->_getUIConfig());
 
         return view('pos/personalizar', $data);
     }
+
     public function menu_principal($id_mesa) {
-    $mesaModel = new MesaModel();
-    // ¡Asegurate de pasar $mesa a la vista!
-    $data['mesa'] = $mesaModel->find($id_mesa);
-    
-    return view('pos/menu_principal', $data); 
-}
-// =======================================================
-    // 1. LÓGICA DE LA ORDEN Y BASE DE DATOS
-    // =======================================================
-    // =======================================================
-    // 1. LÓGICA DE LA ORDEN Y BASE DE DATOS
-    // =======================================================
+        $mesaModel = new MesaModel();
+        $data['mesa'] = $mesaModel->find($id_mesa);
+        
+        // Inyectamos las variables de interfaz
+        $data = array_merge($data, $this->_getUIConfig());
+
+        return view('pos/menu_principal', $data); 
+    }
+
     public function enviar_orden()
     {
         $db = \Config\Database::connect();
@@ -160,7 +178,7 @@ public function filtrar($id_mesa, $id_categoria, $subcategoria_activa = null)
             if ($mesa['estado_mesa'] == 'Libre' || empty($mesa['estado_mesa'])) {
                 $id_comanda = $comandaModel->insert([
                     'id_mesa'    => $id_mesa,
-                    'id_usuario' => session()->get('usuario_id') ?? 1, 
+                    'id_usuario' => session()->get('id_usuario') ?? 1, // Guardará si fue el Capitán o Mesero
                     'fecha_hora' => date('Y-m-d H:i:s')
                 ]);
                 $mesaModel->update($id_mesa, ['estado_mesa' => 'Ocupada']);
@@ -180,7 +198,7 @@ public function filtrar($id_mesa, $id_categoria, $subcategoria_activa = null)
                     'estado'                => 'Pendiente' 
                 ]);
 
-                // Descuento directo y sencillo basado en la tabla Receta
+                // Descuento en inventario
                 $recetas = $db->table('Receta')->where('id_platillo', $item['id'])->get()->getResultArray();
                 foreach ($recetas as $r) {
                     $cantidad_a_descontar = $r['cantidad_usada'] * $item['cant'];
@@ -195,6 +213,12 @@ public function filtrar($id_mesa, $id_categoria, $subcategoria_activa = null)
                 return redirect()->back()->with('error', 'Error al procesar la orden.');
             } else {
                 $db->transCommit();
+                
+                // Si es capitán, lo mandamos directo a su mapa general tras enviar la orden a cocina
+                if (session()->get('id_rol') == 2) {
+                    return redirect()->to(base_url('capitan'))->with('success', 'Orden enviada a cocina por el Capitán.');
+                }
+                
                 return redirect()->to(base_url('pos/ver_comanda/' . $id_mesa))->with('success', 'Orden enviada a cocina.');
             }
 
@@ -204,9 +228,6 @@ public function filtrar($id_mesa, $id_categoria, $subcategoria_activa = null)
         }
     }
 
-    // =======================================================
-    // 2. VER HISTORIAL DE LA MESA (COMANDA)
-    // =======================================================
     public function ver_comanda($id_mesa)
     {
         if (!session()->get('isLoggedIn')) return redirect()->to(base_url('/'));
@@ -215,15 +236,14 @@ public function filtrar($id_mesa, $id_categoria, $subcategoria_activa = null)
         $comandaModel = new \App\Models\ComandaModel();
         
         $data['mesa'] = $mesaModel->find($id_mesa);
+        $data = array_merge($data, $this->_getUIConfig()); // Inyectar UI
         
-        // Obtener la última comanda de esta mesa
         $comanda = $comandaModel->where('id_mesa', $id_mesa)->orderBy('id_comanda', 'DESC')->first();
         
         $data['detalles'] = [];
         $data['total'] = 0;
 
         if ($comanda) {
-            // Hacemos un JOIN con la tabla de platillos para saber el nombre
             $db = \Config\Database::connect();
             $data['detalles'] = $db->table('Detalle_Comanda dc')
                                    ->select('dc.*, p.nombre_platillo')
@@ -239,9 +259,6 @@ public function filtrar($id_mesa, $id_categoria, $subcategoria_activa = null)
         return view('pos/comanda', $data);
     }
 
-// =======================================================
-    // IMPRIMIR CUENTA (MÁXIMO 1 IMPRESIÓN POR SEGURIDAD)
-    // =======================================================
     public function imprimir_cuenta($id_mesa)
     {
         if (!session()->get('isLoggedIn')) return redirect()->to(base_url('/'));
@@ -249,19 +266,16 @@ public function filtrar($id_mesa, $id_categoria, $subcategoria_activa = null)
         $mesaModel = new \App\Models\MesaModel();
         $mesa = $mesaModel->find($id_mesa);
 
-        // CANDADO DE SEGURIDAD: Si el estado ya es 'Por Pagar', significa que ya se imprimió una vez
         if ($mesa['estado_mesa'] === 'Por Pagar') {
             return redirect()->to(base_url('pos/ver_comanda/'.$id_mesa))
-                             ->with('error', '¡Accion denegada! La cuenta de esta mesa ya fue impresa una vez. No se permite re-imprimir por politicas de seguridad.');
+                             ->with('error', '¡Acción denegada! La cuenta ya fue impresa una vez.');
         }
 
-        // Si es la primera vez, cambiamos el estado a AMARILLO (Por Pagar)
         $mesaModel->update($id_mesa, ['estado_mesa' => 'Por Pagar']);
 
-        // [Aquí se ejecuta la lógica de tu ticketera física]
+        // [Lógica ticketera]
 
         return redirect()->to(base_url('pos/ver_comanda/'.$id_mesa))
-                         ->with('success', 'Cuenta impresa de forma exitosa. Mesa bloqueada para caja.');
+                         ->with('success', 'Cuenta impresa. Mesa bloqueada para caja.');
     }
-
 }

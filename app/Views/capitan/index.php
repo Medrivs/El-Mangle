@@ -122,12 +122,9 @@
                 </button>
 
                 <div class="mt-auto shrink-0 pt-4 border-t border-gray-100">
-                    <form id="form_tomar_orden" action="<?= base_url('pos') ?>" method="GET">
-                        <input type="hidden" name="id_mesa_admin" id="input_mesa_admin" value="">
-                        <button type="submit" id="btn_ver_orden" class="w-full bg-[#E2E8F0] text-[#475569] font-bold py-4 rounded-xl transition hover:bg-[#0A1F3D] hover:text-white shadow-sm">
-                            Ver Detalle de Orden
-                        </button>
-                    </form>
+                    <button type="button" id="btn_ver_orden" onclick="ejecutarAccionPrincipal()" class="w-full bg-[#E2E8F0] text-[#475569] font-black py-4 rounded-2xl transition hover:bg-[#0A1F3D] hover:text-white shadow-sm uppercase tracking-widest text-sm flex justify-center items-center gap-2">
+                        Ver Detalle de Orden
+                    </button>
                 </div>
             </div>
             <div class="p-3 text-center text-xs text-gray-400 border-t border-gray-100 bg-white shrink-0">

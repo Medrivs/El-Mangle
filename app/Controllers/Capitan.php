@@ -17,11 +17,15 @@ class Capitan extends BaseController
         $db = \Config\Database::connect();
 
         // Mesas ordenadas para el mapa
+        // Traemos TODAS las mesas activas con ORDENAMIENTO MATEMÁTICO ESTRICTO
         $mesasRaw = $db->table('Mesa m')
                        ->select('m.*, u.nombre_completo as mesero')
                        ->join('Usuario u', 'u.id_usuario = m.id_usuario_mesero', 'left')
                        ->where('m.activa', 1)
-                       ->orderBy('m.numero_mesa', 'ASC')
+                       // 1. Extrae el número base (Ej. de "1-A" saca el "1") y lo ordena
+                       ->orderBy('CAST(m.numero_mesa AS UNSIGNED)', 'ASC')
+                       // 2. Si hay empate (Ej. "1" y "1-A"), los ordena alfabéticamente
+                       ->orderBy('m.numero_mesa', 'ASC') 
                        ->get()->getResultArray();
 
         $mesas = [];

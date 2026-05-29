@@ -14,12 +14,22 @@
             $esPorPagar = ($mesa['estado_mesa'] == 'Por Pagar');
             $headerColor = $esPorPagar ? 'bg-gradient-to-r from-yellow-400 to-amber-500 text-gray-900' : 'bg-[#0A1F3D] text-white';
         ?>
-        <header class="<?= $headerColor ?> p-6 flex justify-between items-center shrink-0 shadow-md">
-            <a href="<?= base_url('pos') ?>" class="bg-black/10 hover:bg-black/20 p-2 px-4 rounded-xl font-bold transition flex items-center gap-2 text-sm">
+        <?php 
+            $esPorPagar = ($mesa['estado_mesa'] == 'Por Pagar');
+            // Si está por pagar es amarillo. Si no, usa el color inteligente (Capitán o Mesero)
+            $headerColor = $esPorPagar ? 'bg-gradient-to-r from-yellow-400 to-amber-500 text-gray-900' : ($bg_header ?? 'bg-[#0A1F3D] text-white');
+        ?>
+        <header class="<?= $headerColor ?> p-6 flex justify-between items-center shrink-0 shadow-md transition-colors">
+            <a href="<?= $ruta_volver ?? base_url('pos') ?>" class="bg-black/10 hover:bg-black/20 p-2 px-4 rounded-xl font-bold transition flex items-center gap-2 text-sm">
                 <i class="fa-solid fa-chevron-left"></i> Ver Mesas
             </a>
             <div class="text-right">
-                <h1 class="text-2xl font-black tracking-tighter uppercase">Mesa <?= $mesa['numero_mesa'] ?></h1>
+                <h1 class="text-2xl font-black tracking-tighter uppercase flex items-center justify-end gap-2">
+                    Mesa <?= $mesa['numero_mesa'] ?>
+                    <?php if(isset($es_capitan) && $es_capitan && !$esPorPagar): ?>
+                        <span class="bg-orange-500 text-white text-[10px] px-2 py-1 rounded-md uppercase tracking-widest font-black ml-2 shadow-sm">Modo Capitán</span>
+                    <?php endif; ?>
+                </h1>
                 <span class="text-[10px] font-black uppercase tracking-widest bg-black/10 px-3 py-1 rounded-full inline-block mt-1">
                     <?= $mesa['estado_mesa'] ?>
                 </span>
