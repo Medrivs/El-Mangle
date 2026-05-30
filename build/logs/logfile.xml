@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <testsuites>
-  <testsuite name="C:\laragon\www\el_mangle\phpunit.xml.dist" tests="1" assertions="3" errors="0" failures="0" skipped="0" time="0.075748">
-    <testsuite name="App" tests="1" assertions="3" errors="0" failures="0" skipped="0" time="0.075748">
-      <testsuite name="Tests\Integration\Controllers\CajaIntegrationTest" file="C:\laragon\www\el_mangle\tests\Integration\Controllers\CajaIntegrationTest.php" tests="1" assertions="3" errors="0" failures="0" skipped="0" time="0.075748">
-        <testcase name="testCorteCajaBloqueadoSiHayMesasOcupadas" file="C:\laragon\www\el_mangle\tests\Integration\Controllers\CajaIntegrationTest.php" line="84" class="Tests\Integration\Controllers\CajaIntegrationTest" classname="Tests.Integration.Controllers.CajaIntegrationTest" assertions="3" time="0.075748"/>
+  <testsuite name="C:\laragon\www\el_mangle\phpunit.xml.dist" tests="1" assertions="5" errors="0" failures="0" skipped="0" time="0.110972">
+    <testsuite name="App" tests="1" assertions="5" errors="0" failures="0" skipped="0" time="0.110972">
+      <testsuite name="Tests\Integration\Controllers\CapitanIntegrationTest" file="C:\laragon\www\el_mangle\tests\Integration\Controllers\CapitanIntegrationTest.php" tests="1" assertions="5" errors="0" failures="0" skipped="0" time="0.110972">
+        <testcase name="testEjecutarDivisionCreaNuevaMesaYRegistraAuditoria" file="C:\laragon\www\el_mangle\tests\Integration\Controllers\CapitanIntegrationTest.php" line="119" class="Tests\Integration\Controllers\CapitanIntegrationTest" classname="Tests.Integration.Controllers.CapitanIntegrationTest" assertions="5" time="0.110972"/>
       </testsuite>
     </testsuite>
   </testsuite>
