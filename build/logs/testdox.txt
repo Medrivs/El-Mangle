@@ -1,3 +1,3 @@
-Usuarios Integration (Tests\Integration\Controllers\UsuariosIntegration)
- [x] Eliminar aplica borrado logico en b d
+Materia Prima Integration (Tests\Integration\Controllers\MateriaPrimaIntegration)
+ [x] Eliminar ingrediente aplica borrado logico
 

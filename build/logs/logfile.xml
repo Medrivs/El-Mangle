@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <testsuites>
-  <testsuite name="C:\laragon\www\el_mangle\phpunit.xml.dist" tests="1" assertions="3" errors="0" failures="0" skipped="0" time="0.087804">
-    <testsuite name="App" tests="1" assertions="3" errors="0" failures="0" skipped="0" time="0.087804">
-      <testsuite name="Tests\Integration\Controllers\UsuariosIntegrationTest" file="C:\laragon\www\el_mangle\tests\Integration\Controllers\UsuariosIntegrationTest.php" tests="1" assertions="3" errors="0" failures="0" skipped="0" time="0.087804">
-        <testcase name="testEliminarAplicaBorradoLogicoEnBD" file="C:\laragon\www\el_mangle\tests\Integration\Controllers\UsuariosIntegrationTest.php" line="94" class="Tests\Integration\Controllers\UsuariosIntegrationTest" classname="Tests.Integration.Controllers.UsuariosIntegrationTest" assertions="3" time="0.087804"/>
+  <testsuite name="C:\laragon\www\el_mangle\phpunit.xml.dist" tests="1" assertions="1" errors="0" failures="0" skipped="0" time="0.127804">
+    <testsuite name="App" tests="1" assertions="1" errors="0" failures="0" skipped="0" time="0.127804">
+      <testsuite name="Tests\Integration\Controllers\MateriaPrimaIntegrationTest" file="C:\laragon\www\el_mangle\tests\Integration\Controllers\MateriaPrimaIntegrationTest.php" tests="1" assertions="1" errors="0" failures="0" skipped="0" time="0.127804">
+        <testcase name="testEliminarIngredienteAplicaBorradoLogico" file="C:\laragon\www\el_mangle\tests\Integration\Controllers\MateriaPrimaIntegrationTest.php" line="92" class="Tests\Integration\Controllers\MateriaPrimaIntegrationTest" classname="Tests.Integration.Controllers.MateriaPrimaIntegrationTest" assertions="1" time="0.127804"/>
       </testsuite>
     </testsuite>
   </testsuite>
