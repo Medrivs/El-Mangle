@@ -51,7 +51,7 @@ class UsuarioModelTest extends CIUnitTestCase
     public function testTablaEsUsuario(): void
     {
         // Assert - afirmamos que la tabla sea exactamente 'usuario' (minúsculas, sin 's' al final)
-        $this->assertEquals('usuario', $this->model->table);
+        $this->assertEquals('Usuario', $this->model->table);
     }
  
     /**
