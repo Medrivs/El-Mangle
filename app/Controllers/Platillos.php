@@ -7,91 +7,90 @@ use App\Models\CategoriaModel;
 
 class Platillos extends BaseController
 {
+    protected $platilloModel;
+    protected $categoriaModel;
+
+    // inyecta los modelos para permitir pruebas unitarias con mocks
+    public function initController(\CodeIgniter\HTTP\RequestInterface $request, \CodeIgniter\HTTP\ResponseInterface $response, \Psr\Log\LoggerInterface $logger)
+    {
+        parent::initController($request, $response, $logger);
+        $this->platilloModel = new PlatilloModel();
+        $this->categoriaModel = new CategoriaModel();
+    }
+
     public function index()
     {
-        $model = new PlatilloModel();
-        $data['platillos'] = $model->select('platillo.*, categoria.nombre_categoria')
-                                   ->join('categoria', 'categoria.id_categoria = platillo.id_categoria', 'left')
-                                   ->findAll();
+        $data['platillos'] = $this->platilloModel->select('platillo.*, categoria.nombre_categoria')
+            ->join('categoria', 'categoria.id_categoria = platillo.id_categoria', 'left')
+            ->findAll();
         
         return view('admin/platillos', $data);
     }
 
     public function agregar()
     {
-        $catModel = new CategoriaModel();
-        $data['categorias'] = $catModel->findAll();
-        return view('admin/platillos_agregar', $data);
+        return view('admin/platillos_agregar', ['categorias' => $this->categoriaModel->findAll()]);
     }
 
     public function guardar()
     {
-        $model = new PlatilloModel();
-        $rutaImagen = ''; // Variable vacía por si no suben foto
-
-        // 1. Procesamos la subida de la imagen
-        $file = $this->request->getFile('imagen');
-        if ($file && $file->isValid() && !$file->hasMoved()) {
-            $newName = $file->getRandomName(); // Nombre aleatorio seguro
-            $file->move('uploads/platillos/', $newName); // La mueve a public/uploads/platillos
-            $rutaImagen = 'uploads/platillos/' . $newName; // Guardamos la ruta para la base de datos
-        }
-
+        $post = $this->request->getPost();
         $data = [
-            'nombre_platillo' => $this->request->getPost('nombre_platillo'),
-            'descripcion'     => $this->request->getPost('descripcion'),
-            'precio_venta'    => $this->request->getPost('precio_venta'),
-            'id_categoria'    => $this->request->getPost('id_categoria'),
-            'imagen_url'      => $rutaImagen, // Aquí va la ruta de la foto física
+            'nombre_platillo' => $post['nombre_platillo'] ?? '',
+            'descripcion'     => $post['descripcion'] ?? '',
+            'precio_venta'    => $post['precio_venta'] ?? 0,
+            'id_categoria'    => $post['id_categoria'] ?? null,
+            'imagen_url'      => $this->procesarImagen(),
             'disponible'      => 1
         ];
 
-        $model->save($data);
+        $this->platilloModel->save($data);
         return redirect()->to(base_url('platillos'));
     }
 
     public function editar($id)
     {
-        $model = new PlatilloModel();
-        $catModel = new CategoriaModel();
-
-        $data['platillo']   = $model->find($id);
-        $data['categorias'] = $catModel->findAll();
+        $data = [
+            'platillo'   => $this->platilloModel->find($id),
+            'categorias' => $this->categoriaModel->findAll()
+        ];
         
         return view('admin/platillos_editar', $data);
     }
 
     public function actualizar($id)
     {
-        $model = new PlatilloModel();
-        
-        // Recuperamos la ruta de la imagen que ya tenía por si no sube una nueva
-        $rutaImagen = $this->request->getPost('imagen_actual'); 
-
-        $file = $this->request->getFile('imagen');
-        if ($file && $file->isValid() && !$file->hasMoved()) {
-            $newName = $file->getRandomName();
-            $file->move('uploads/platillos/', $newName);
-            $rutaImagen = 'uploads/platillos/' . $newName; // Si subió una nueva, reemplaza la ruta
-        }
-
+        $post = $this->request->getPost();
         $data = [
-            'nombre_platillo' => $this->request->getPost('nombre_platillo'),
-            'descripcion'     => $this->request->getPost('descripcion'),
-            'precio_venta'    => $this->request->getPost('precio_venta'),
-            'id_categoria'    => $this->request->getPost('id_categoria'),
-            'imagen_url'      => $rutaImagen,
-            'disponible'      => $this->request->getPost('disponible') ? 1 : 0
+            'nombre_platillo' => $post['nombre_platillo'] ?? '',
+            'descripcion'     => $post['descripcion'] ?? '',
+            'precio_venta'    => $post['precio_venta'] ?? 0,
+            'id_categoria'    => $post['id_categoria'] ?? null,
+            'imagen_url'      => $this->procesarImagen($post['imagen_actual'] ?? ''),
+            'disponible'      => isset($post['disponible']) ? 1 : 0
         ];
 
-        $model->update($id, $data);
+        $this->platilloModel->update($id, $data);
         return redirect()->to(base_url('platillos'));
     }
 
     public function eliminar($id)
     {
-        $model = new PlatilloModel();
-        $model->update($id, ['disponible' => 0]);
+        $this->platilloModel->update($id, ['disponible' => 0]);
         return redirect()->to(base_url('platillos'));
+    }
+
+    // método privado para manejar la logica de subida de archivos (reutilizable)
+    private function procesarImagen(string $ruta_actual = ''): string
+    {
+        $file = $this->request->getFile('imagen');
+        
+        if ($file && $file->isValid() && !$file->hasMoved()) {
+            $newName = $file->getRandomName();
+            $file->move('uploads/platillos/', $newName);
+            return 'uploads/platillos/' . $newName;
+        }
+        
+        return $ruta_actual;
     }
 }
