@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <testsuites>
-  <testsuite name="C:\laragon\www\el_mangle\phpunit.xml.dist" tests="1" assertions="1" errors="0" failures="0" skipped="0" time="0.021345">
-    <testsuite name="App" tests="1" assertions="1" errors="0" failures="0" skipped="0" time="0.021345">
-      <testsuite name="Tests\App\Models\UsuarioModelTest" file="C:\laragon\www\el_mangle\tests\Models\UsuarioModelTest.php" tests="1" assertions="1" errors="0" failures="0" skipped="0" time="0.021345">
-        <testcase name="testTablaEsUsuario" file="C:\laragon\www\el_mangle\tests\Models\UsuarioModelTest.php" line="51" class="Tests\App\Models\UsuarioModelTest" classname="Tests.App.Models.UsuarioModelTest" assertions="1" time="0.021345"/>
+  <testsuite name="C:\laragon\www\el_mangle\phpunit.xml.dist" tests="1" assertions="1" errors="0" failures="0" skipped="0" time="0.026976">
+    <testsuite name="App" tests="1" assertions="1" errors="0" failures="0" skipped="0" time="0.026976">
+      <testsuite name="Tests\App\Models\UsuarioModelTest" file="C:\laragon\www\el_mangle\tests\Models\UsuarioModelTest.php" tests="1" assertions="1" errors="0" failures="0" skipped="0" time="0.026976">
+        <testcase name="testTablaEsUsuario" file="C:\laragon\www\el_mangle\tests\Models\UsuarioModelTest.php" line="51" class="Tests\App\Models\UsuarioModelTest" classname="Tests.App.Models.UsuarioModelTest" assertions="1" time="0.026976"/>
       </testsuite>
     </testsuite>
   </testsuite>
