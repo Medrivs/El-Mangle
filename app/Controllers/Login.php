@@ -6,79 +6,71 @@ use App\Models\UsuarioModel;
 
 class Login extends BaseController
 {
+    protected $usuarioModel;
+
+    // inicializa dependencias para facilitar la inyeccion de mocks en pruebas
+    public function initController(\CodeIgniter\HTTP\RequestInterface $request, \CodeIgniter\HTTP\ResponseInterface $response, \Psr\Log\LoggerInterface $logger)
+    {
+        parent::initController($request, $response, $logger);
+        $this->usuarioModel = new UsuarioModel();
+    }
+
+    // carga la vista de login o redirige a la ruta correspondiente si ya hay sesion
     public function index()
     {
-        if (session()->get('isLoggedIn')) {
-            return redirect()->to($this->rutaPorRol(session()->get('id_rol')));
-        }
+        if (session()->get('isLoggedIn')) return redirect()->to($this->rutaPorRol(session()->get('id_rol')));
+        
         return view('login');
     }
 
+    // valida el pin ingresado y levanta la sesion si encuentra al usuario
     public function ingresar()
     {
-        $model = new UsuarioModel();
-        $pin = $this->request->getPost('pin');
+        $pin = $this->request->getPost('pin') ?? '';
+        
+        // extrae unicamente a los usuarios activos
+        $usuarios = $this->usuarioModel->where('estado_usuario', 1)->findAll();
 
-        // Traemos a todos los usuarios que están dados de alta
-        $usuarios = $model->where('estado_usuario', 1)->findAll();
-        $usuarioAutenticado = null;
-
-        // Buscamos de quién es el PIN que acaban de teclear
         foreach ($usuarios as $usuario) {
-            // Verifica si el PIN coincide (ya sea texto plano o encriptado)
             if ($pin === $usuario['password'] || password_verify($pin, $usuario['password'])) {
-                $usuarioAutenticado = $usuario;
-                break; // Lo encontramos, detenemos la búsqueda
+                
+                session()->set([
+                    'id_usuario' => $usuario['id_usuario'],
+                    'id_rol'     => $usuario['id_rol'],
+                    'nombre'     => $usuario['nombre_completo'],
+                    'username'   => $usuario['username'],
+                    'isLoggedIn' => true
+                ]);
+
+                return redirect()->to($this->rutaPorRol($usuario['id_rol']));
             }
         }
 
-        // Si encontró al dueño del PIN, lo deja entrar
-        if ($usuarioAutenticado) {
-            $sessionData = [
-                'id_usuario' => $usuarioAutenticado['id_usuario'],
-                'id_rol'     => $usuarioAutenticado['id_rol'],
-                'nombre'     => $usuarioAutenticado['nombre_completo'],
-                'username'   => $usuarioAutenticado['username'],
-                'isLoggedIn' => true
-            ];
-            session()->set($sessionData);
-
-            return redirect()->to($this->rutaPorRol($usuarioAutenticado['id_rol']));
-        }
-
-        // Si el PIN no es de nadie, marca error
         return redirect()->to(base_url('/'))->with('error', 'PIN incorrecto o no autorizado.');
     }
 
+    // cierra sesion silenciosamente (metodo heredado/antiguo)
     public function salir()
     {
         session()->destroy();
         return redirect()->to(base_url('/'));
     }
 
-private function rutaPorRol($id_rol)
-    {
-        if ($id_rol == 1) {
-            return base_url('usuarios'); // Admin
-        } elseif ($id_rol == 2) {
-            return base_url('capitan'); // Capitán -> ¡NUEVA RUTA!
-        } elseif ($id_rol == 4) {
-            return base_url('chef/dashboard'); // Chef
-        } elseif ($id_rol == 5) {
-            return base_url('caja'); // Cajero
-        } else {
-            return base_url('pos'); // Mesero (Rol 3)
-        }
-    }
-    // =======================================================
-    // CERRAR SESIÓN Y DESTRUIR COMODINES DE MEMORIA
-    // =======================================================
+    // destruye la sesion y muestra mensaje de exito en pantalla
     public function logout()
     {
-        // 1. Destruimos toda la sesion de PHP en el servidor
         session()->destroy();
-
-        // 2. Redirigimos a la pantalla de login principal con un mensaje de éxito
         return redirect()->to(base_url('/'))->with('success', 'Sesion cerrada de forma segura.');
+    }
+
+    // devuelve la url de destino dependiendo del nivel de acceso del empleado
+    private function rutaPorRol($id_rol)
+    {
+        if ($id_rol == 1) return base_url('usuarios');
+        if ($id_rol == 2) return base_url('capitan');
+        if ($id_rol == 4) return base_url('chef/dashboard');
+        if ($id_rol == 5) return base_url('caja');
+        
+        return base_url('pos');
     }
 }
