@@ -164,41 +164,33 @@ class Database extends Config
      */
     public array $tests = [
         'DSN'         => '',
-        'hostname'    => '127.0.0.1',
-        'username'    => '',
-        'password'    => '',
-        'database'    => ':memory:',
-        'DBDriver'    => 'SQLite3',
-        'DBPrefix'    => 'db_',  // Needed to ensure we're working correctly with prefixes live. DO NOT REMOVE FOR CI DEVS
+        'hostname'    => 'localhost',
+        'username'    => 'root',       // Usuario por defecto en Laragon
+        'password'    => 'Alanmbritos1',           // Contraseña por defecto en Laragon (vacía)
+        'database'    => 'el_mangle',  // <-- PON AQUÍ EL NOMBRE EXACTO DE TU BD EN WORKBENCH
+        'DBDriver'    => 'MySQLi',     // <-- ¡ADIOS SQLITE! BIENVENIDO MYSQL
+        'DBPrefix'    => '',           // <-- PREFIJO VACÍO (Quitamos el 'db_')
         'pConnect'    => false,
         'DBDebug'     => true,
-        'charset'     => 'utf8',
-        'DBCollat'    => '',
+        'charset'     => 'utf8mb4',
+        'DBCollat'    => 'utf8mb4_general_ci',
         'swapPre'     => '',
         'encrypt'     => false,
         'compress'    => false,
-        'strictOn'    => true,
+        'strictOn'    => false,
         'failover'    => [],
         'port'        => 3306,
-        'foreignKeys' => true,
-        'busyTimeout' => 1000,
-        'synchronous' => null,
-        'dateFormat'  => [
-            'date'     => 'Y-m-d',
-            'datetime' => 'Y-m-d H:i:s',
-            'time'     => 'H:i:s',
-        ],
+        'numberNative'=> false,
     ];
 
     public function __construct()
     {
         parent::__construct();
 
-        // Ensure that we always set the database group to 'tests' if
-        // we are currently running an automated test suite, so that
-        // we don't overwrite live data on accident.
+        // Cambiamos 'tests' por 'default' para forzar a PHPUnit a usar 
+        // tu base de datos MySQL real de Laragon (El Mangle)
         if (ENVIRONMENT === 'testing') {
-            $this->defaultGroup = 'tests';
+            $this->defaultGroup = 'default'; 
         }
     }
 }
