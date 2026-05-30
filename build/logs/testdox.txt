@@ -1,3 +1,3 @@
-Chef Integration (Tests\Integration\Controllers\ChefIntegration)
- [x] Toggle bloqueo invierte el valor en my s q l
+Login Integration (Tests\Integration\Controllers\LoginIntegration)
+ [x] Logout destruye sesion y redirige
 
