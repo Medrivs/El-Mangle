@@ -1,3 +1,3 @@
-Materia Prima Integration (Tests\Integration\Controllers\MateriaPrimaIntegration)
- [x] Eliminar ingrediente aplica borrado logico
+Caja Integration (Tests\Integration\Controllers\CajaIntegration)
+ [x] Corte caja bloqueado si hay mesas ocupadas
 

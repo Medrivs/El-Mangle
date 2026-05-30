@@ -119,7 +119,8 @@ class Caja extends BaseController
     // centraliza validacion de sesion
     private function esCajeroAutorizado(): bool
     {
-        return session()->get('isLoggedIn'); 
+        // Forzamos el retorno a bool, si es null, devuelve false
+        return (bool) session()->get('isLoggedIn'); 
     }
 
     // devuelve la suma del costo de platillos de la BD aislando la logica
