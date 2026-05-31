@@ -154,16 +154,16 @@
                                 </div>
                         </div>
 
-                        <form action="<?= base_url('caja/liquidar') ?>" method="POST" class="shrink-0">
-                            <input type="hidden" name="id_mesa" value="<?= $mesa_activa['id_mesa'] ?>">
-                            <input type="hidden" name="metodo_pago" id="input_metodo" value="efectivo">
-                            <input type="hidden" name="monto_efectivo" id="input_efectivo" value="0">
-                            <input type="hidden" name="monto_tarjeta" id="input_tarjeta" value="0">
-                            
-                            <button type="submit" id="btn_liquidar" class="w-full bg-gray-200 text-gray-400 font-black text-lg py-5 rounded-2xl transition shadow-sm uppercase tracking-widest flex justify-center items-center gap-3 cursor-not-allowed" disabled>
-                                Cobrar Cuenta <i class="fa-solid fa-lock"></i>
-                            </button>
-                        </form>
+                        <form id="form_cobro_seguro" action="<?= base_url('caja/liquidar') ?>" method="POST" class="shrink-0">
+    <input type="hidden" name="id_mesa" value="<?= $mesa_activa['id_mesa'] ?>">
+    <input type="hidden" name="metodo_pago" id="input_metodo" value="efectivo">
+    <input type="hidden" name="monto_efectivo" id="input_efectivo" value="0">
+    <input type="hidden" name="monto_tarjeta" id="input_tarjeta" value="0">
+    
+    <button type="button" id="btn_liquidar_seguro" class="w-full bg-[#00B4D8] hover:bg-[#0096B4] text-white font-black text-lg py-5 rounded-2xl transition shadow-sm uppercase tracking-widest flex justify-center items-center gap-3">
+        Liquidar Cuenta <i class="fa-solid fa-check-double"></i>
+    </button>
+</form>
                     </div>
                 </div>
             <?php else: ?>
@@ -188,6 +188,6 @@
         };
     </script>
     
-    <script src="<?= base_url('js/caja.js?v=3') ?>"></script>
+    <script src="<?= base_url('js/caja.js?v=4') ?>"></script>
 </body>
 </html>

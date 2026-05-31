@@ -1,3 +1,5 @@
-Alertas Disponibilidad System (Tests\System\AlertasDisponibilidadSystem)
- [x] Activacion de boton de panico y bloqueo manual
+Caja Caja Negra (Tests\BlackBox\CajaCajaNegra)
+ [ ] Rechazo de montos negativos
+ [ ] Rechazo de caracteres invalidos en monto
+ [x] Cobro exitoso con datos validos
 

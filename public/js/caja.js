@@ -73,18 +73,14 @@ function tecla(val) {
     if (val === 'back') {
         stringRecibido = stringRecibido.slice(0, -1);
     } else {
-        // 1. Evitar que pongan más de un punto decimal
         if (val === '.' && stringRecibido.includes('.')) return;
         
-        // 2. Si empiezan escribiendo un punto, que el sistema ponga "0." automático
         if (val === '.' && stringRecibido === "") {
             stringRecibido = "0.";
         } else {
-            // 3. Evitar ceros a la izquierda sin punto (ej. "05")
             if (stringRecibido === "0" && val !== ".") {
                 stringRecibido = val;
             } else {
-                // 4. Limitar a máximo 2 decimales (para que no escriban $150.555)
                 if (stringRecibido.includes('.')) {
                     let partes = stringRecibido.split('.');
                     if (partes[1].length >= 2) return; 
@@ -94,13 +90,8 @@ function tecla(val) {
         }
     }
 
-    // Convertir el texto a decimal (parseFloat en lugar de parseInt)
     totalRecibido = parseFloat(stringRecibido) || 0;
-    
-    // Mostrar en pantalla exactamente lo que el usuario escribe (para que vea el punto)
     document.getElementById('lbl_recibido').innerText = stringRecibido === "" ? '$0' : '$' + stringRecibido;
-    
-    // Ejecutar la matemática del cambio
     calcularCambio();
 }
 
@@ -108,7 +99,7 @@ function calcularCambio() {
     let divCalculo = document.getElementById('div_calculo');
     if(!divCalculo) return;
     
-    let btnLiquidar = document.getElementById('btn_liquidar');
+    let btnLiquidar = document.getElementById('btn_liquidar_seguro'); // Usamos el ID de seguridad
     let inputMetodo = document.getElementById('input_metodo');
     let inputEfe = document.getElementById('input_efectivo');
     let inputTar = document.getElementById('input_tarjeta');
@@ -120,33 +111,38 @@ function calcularCambio() {
         inputEfe.value = 0;
         inputTar.value = granTotal;
         divCalculo.innerHTML = `<div class="bg-blue-50 text-blue-600 py-1 px-2 rounded font-bold border border-blue-100">Cobro total a Tarjeta (Terminal)</div>`;
-        btnLiquidar.innerHTML = `Liquidar en Tarjeta <i class="fa-solid fa-credit-card"></i>`;
-        btnLiquidar.className = "w-full bg-blue-600 hover:bg-blue-800 text-white font-black text-sm py-4 rounded-xl transition shadow-md uppercase tracking-widest flex justify-center items-center gap-2";
-
+        if(btnLiquidar) {
+            btnLiquidar.innerHTML = `Liquidar en Tarjeta <i class="fa-solid fa-credit-card"></i>`;
+            btnLiquidar.className = "w-full bg-blue-600 hover:bg-blue-800 text-white font-black text-lg py-5 rounded-2xl transition shadow-sm uppercase tracking-widest flex justify-center items-center gap-3";
+        }
     } else if (totalRecibido === 0) {
         inputMetodo.value = 'efectivo';
         inputEfe.value = granTotal;
         inputTar.value = 0;
         divCalculo.innerHTML = '';
-        btnLiquidar.innerHTML = `Liquidar y Liberar Mesa <i class="fa-solid fa-check-double"></i>`;
-        btnLiquidar.className = "w-full bg-[#EEF2F6] text-[#64748B] hover:bg-[#0A1F3D] hover:text-white font-black text-sm py-4 rounded-xl transition shadow-sm uppercase tracking-widest flex justify-center items-center gap-2";
-
+        if(btnLiquidar) {
+            btnLiquidar.innerHTML = `Ingresa Monto a Cobrar <i class="fa-solid fa-keyboard"></i>`;
+            btnLiquidar.className = "w-full bg-gray-200 text-gray-400 font-black text-lg py-5 rounded-2xl transition shadow-sm uppercase tracking-widest flex justify-center items-center gap-3 cursor-not-allowed";
+        }
     } else if (diferencia < 0) {
         let cobroTarjeta = Math.abs(diferencia);
         inputMetodo.value = 'mixto';
         inputEfe.value = totalRecibido;
         inputTar.value = cobroTarjeta;
         divCalculo.innerHTML = `<div class="bg-orange-50 text-orange-600 py-1 px-2 rounded font-bold border border-orange-100">Pasar Terminal por: $${cobroTarjeta.toFixed(2)}</div>`;
-        btnLiquidar.innerHTML = `Liquidar ($${totalRecibido} Efe + $${cobroTarjeta.toFixed(2)} Tarj) <i class="fa-solid fa-cash-register"></i>`;
-        btnLiquidar.className = "w-full bg-orange-500 hover:bg-orange-600 text-white font-black text-sm py-4 rounded-xl transition shadow-md uppercase tracking-widest flex justify-center items-center gap-2";
-
+        if(btnLiquidar) {
+            btnLiquidar.innerHTML = `Liquidar Mixto <i class="fa-solid fa-cash-register"></i>`;
+            btnLiquidar.className = "w-full bg-orange-500 hover:bg-orange-600 text-white font-black text-lg py-5 rounded-2xl transition shadow-sm uppercase tracking-widest flex justify-center items-center gap-3";
+        }
     } else {
         inputMetodo.value = 'efectivo';
         inputEfe.value = granTotal;
         inputTar.value = 0;
         divCalculo.innerHTML = `<div class="bg-green-50 text-green-600 py-1 px-2 rounded font-bold border border-green-100">Cambio a Entregar: $${diferencia.toFixed(2)}</div>`;
-        btnLiquidar.innerHTML = `Liquidar (Cambio: $${diferencia.toFixed(2)}) <i class="fa-solid fa-money-bill-wave"></i>`;
-        btnLiquidar.className = "w-full bg-green-500 hover:bg-green-600 text-white font-black text-sm py-4 rounded-xl transition shadow-md uppercase tracking-widest flex justify-center items-center gap-2";
+        if(btnLiquidar) {
+            btnLiquidar.innerHTML = `Liquidar en Efectivo <i class="fa-solid fa-money-bill-wave"></i>`;
+            btnLiquidar.className = "w-full bg-green-500 hover:bg-green-600 text-white font-black text-lg py-5 rounded-2xl transition shadow-sm uppercase tracking-widest flex justify-center items-center gap-3";
+        }
     }
 }
 
@@ -180,5 +176,42 @@ function calcularAuditoria() {
     document.getElementById('input_dif').value = diferencia;
 }
 
-// Iniciar al cargar
-document.addEventListener('DOMContentLoaded', inicializarCaja);
+// --- BLINDAJE DE COBRO PARA LA CAJA NEGRA ---
+document.addEventListener('DOMContentLoaded', function() {
+    inicializarCaja();
+
+    const btnLiquidarSeguro = document.getElementById('btn_liquidar_seguro');
+
+    if (btnLiquidarSeguro) {
+        btnLiquidarSeguro.addEventListener('click', function() {
+            let form = document.getElementById('form_cobro_seguro');
+            
+            let radio = document.querySelector('input[name="metodo"]:checked');
+            let metodo = radio ? radio.value : 'efectivo';
+            document.getElementById('input_metodo').value = metodo;
+            
+            let txtConsumo = document.getElementById('lbl_consumo').innerText.replace(/[^0-9.]/g, '');
+            let txtPropina = document.getElementById('lbl_monto_propina').innerText.replace(/[^0-9.]/g, '');
+            let txtRecibido = document.getElementById('lbl_recibido').innerText.replace(/[^0-9.]/g, '');
+            
+            let totalPagar = parseFloat(txtConsumo) + parseFloat(txtPropina);
+            let recibido = parseFloat(txtRecibido);
+            
+            if (metodo === 'tarjeta') {
+                document.getElementById('input_tarjeta').value = totalPagar;
+                document.getElementById('input_efectivo').value = 0;
+            } else {
+                if (recibido < totalPagar) {
+                    alert("⚠️ El efectivo recibido ($" + recibido + ") no alcanza para cubrir la cuenta ($" + totalPagar + ").");
+                    return; 
+                }
+                document.getElementById('input_efectivo').value = recibido;
+                document.getElementById('input_tarjeta').value = 0;
+            }
+            
+            this.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando Pago...';
+            this.classList.add('opacity-75', 'cursor-not-allowed');
+            form.submit();
+        });
+    }
+});
