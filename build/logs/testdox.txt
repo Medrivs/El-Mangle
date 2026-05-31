@@ -1,3 +1,3 @@
-Pos Integration (Tests\Integration\Controllers\PosIntegration)
- [x] Enviar orden crea comanda y deduce inventario
+M03_Supervision System (Tests\System\M03_SupervisionSystem)
+ [x] Flujo maestro de supervision y control
 
