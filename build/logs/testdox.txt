@@ -1,5 +1,5 @@
-Caja Caja Negra (Tests\BlackBox\CajaCajaNegra)
- [ ] Rechazo de montos negativos
- [ ] Rechazo de caracteres invalidos en monto
- [x] Cobro exitoso con datos validos
+Reportes Caja Negra (Tests\BlackBox\ReportesCajaNegra)
+ [ ] Seguridad mesero no puede hacer corte financiero
+ [x] Rechazo de reporte financiero con mesas activas
+ [x] Reporte financiero exitoso sin mesas activas
 

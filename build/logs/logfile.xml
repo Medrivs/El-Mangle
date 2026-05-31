@@ -1,50 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <testsuites>
-  <testsuite name="Tests\BlackBox\CajaCajaNegraTest" file="C:\laragon\www\el_mangle\tests\BlackBox\CajaCajaNegraTest.php" tests="3" assertions="6" errors="0" failures="2" skipped="0" time="0.260285">
-    <testcase name="testRechazoDeMontosNegativos" file="C:\laragon\www\el_mangle\tests\BlackBox\CajaCajaNegraTest.php" line="64" class="Tests\BlackBox\CajaCajaNegraTest" classname="Tests.BlackBox.CajaCajaNegraTest" assertions="2" time="0.135668">
-      <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\BlackBox\CajaCajaNegraTest::testRechazoDeMontosNegativos&#13;
-Failed asserting that a row in the table [Mesa] matches the attributes 
-{
-    "id_mesa": 8888,
-    "estado_mesa": "Por Pagar"
-}
-
-Found similar results: [
-    {
-        "id_mesa": "8888",
-        "numero_mesa": "8888",
-        "estado_mesa": "Libre",
-        "capacidad": null,
-        "activa": "1",
-        "id_usuario_mesero": null
-    }
-] and 48 others.
+  <testsuite name="Tests\BlackBox\ReportesCajaNegraTest" file="C:\laragon\www\el_mangle\tests\BlackBox\ReportesCajaNegraTest.php" tests="3" assertions="8" errors="0" failures="1" skipped="0" time="0.395678">
+    <testcase name="testSeguridadMeseroNoPuedeHacerCorteFinanciero" file="C:\laragon\www\el_mangle\tests\BlackBox\ReportesCajaNegraTest.php" line="70" class="Tests\BlackBox\ReportesCajaNegraTest" classname="Tests.BlackBox.ReportesCajaNegraTest" assertions="2" time="0.183179">
+      <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\BlackBox\ReportesCajaNegraTest::testSeguridadMeseroNoPuedeHacerCorteFinanciero&#13;
+Failed asserting that 'http://localhost/el_mangle/caja' [ASCII](length: 31) does not contain "caja" [ASCII](length: 4).
 &#13;
-C:\laragon\www\el_mangle\system\Test\DatabaseTestTrait.php:317
-C:\laragon\www\el_mangle\tests\BlackBox\CajaCajaNegraTest.php:76</failure>
+C:\laragon\www\el_mangle\tests\BlackBox\ReportesCajaNegraTest.php:80</failure>
     </testcase>
-    <testcase name="testRechazoDeCaracteresInvalidosEnMonto" file="C:\laragon\www\el_mangle\tests\BlackBox\CajaCajaNegraTest.php" line="79" class="Tests\BlackBox\CajaCajaNegraTest" classname="Tests.BlackBox.CajaCajaNegraTest" assertions="2" time="0.062773">
-      <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\BlackBox\CajaCajaNegraTest::testRechazoDeCaracteresInvalidosEnMonto&#13;
-Failed asserting that a row in the table [Mesa] matches the attributes 
-{
-    "id_mesa": 8888,
-    "estado_mesa": "Por Pagar"
-}
-
-Found similar results: [
-    {
-        "id_mesa": "8888",
-        "numero_mesa": "8888",
-        "estado_mesa": "Libre",
-        "capacidad": null,
-        "activa": "1",
-        "id_usuario_mesero": null
-    }
-] and 48 others.
-&#13;
-C:\laragon\www\el_mangle\system\Test\DatabaseTestTrait.php:317
-C:\laragon\www\el_mangle\tests\BlackBox\CajaCajaNegraTest.php:91</failure>
-    </testcase>
-    <testcase name="testCobroExitosoConDatosValidos" file="C:\laragon\www\el_mangle\tests\BlackBox\CajaCajaNegraTest.php" line="94" class="Tests\BlackBox\CajaCajaNegraTest" classname="Tests.BlackBox.CajaCajaNegraTest" assertions="2" time="0.061844"/>
+    <testcase name="testRechazoDeReporteFinancieroConMesasActivas" file="C:\laragon\www\el_mangle\tests\BlackBox\ReportesCajaNegraTest.php" line="83" class="Tests\BlackBox\ReportesCajaNegraTest" classname="Tests.BlackBox.ReportesCajaNegraTest" assertions="3" time="0.102756"/>
+    <testcase name="testReporteFinancieroExitosoSinMesasActivas" file="C:\laragon\www\el_mangle\tests\BlackBox\ReportesCajaNegraTest.php" line="95" class="Tests\BlackBox\ReportesCajaNegraTest" classname="Tests.BlackBox.ReportesCajaNegraTest" assertions="3" time="0.109743"/>
   </testsuite>
 </testsuites>
