@@ -132,3 +132,7 @@ class PlatillosIntegrationTest extends CIUnitTestCase
         ]);
     }
 }
+//vendor/bin/phpunit --filter testVistaIndexMuestraListaDePlatillos --no-coverage
+//vendor/bin/phpunit --filter testGuardarInsertaPlatilloEnBD --no-coverage
+//vendor/bin/phpunit --filter testActualizarModificaDatosDelPlatillo --no-coverage  
+//vendor/bin/phpunit --filter testEliminarAplicaBorradoLogico --no-coverage

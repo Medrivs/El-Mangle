@@ -1,9 +1,3 @@
-Materia Prima (App\Controllers\MateriaPrima)
- [x] Eliminar aplica borrado logico
-
-Platillos Integration (Tests\Integration\Controllers\PlatillosIntegration)
- [x] Eliminar aplica borrado logico
-
-Usuarios Integration (Tests\Integration\Controllers\UsuariosIntegration)
- [x] Eliminar aplica borrado logico en b d
+Pos Integration (Tests\Integration\Controllers\PosIntegration)
+ [x] Enviar orden crea comanda y deduce inventario
 
