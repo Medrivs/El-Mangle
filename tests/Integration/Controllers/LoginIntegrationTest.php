@@ -82,4 +82,4 @@ class LoginIntegrationTest extends CIUnitTestCase
 }
 // vendor/bin/phpunit --filter testLogoutDestruyeSesionYRedirige --no-coverage
 // vendor/bin/phpunit --filter testIngresarValidaPINYCreaSesion --no-coverage
-// vendor/bin/phpunit --filter testIngresarRechazaPINInvalidoOCuenta    
+// vendor/bin/phpunit --filter testIngresarRechazaPINInvalidoOCuenta --no-coverage

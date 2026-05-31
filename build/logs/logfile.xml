@@ -1,9 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <testsuites>
-  <testsuite name="C:\laragon\www\el_mangle\phpunit.xml.dist" tests="1" assertions="4" errors="0" failures="0" skipped="0" time="0.062889">
-    <testsuite name="App" tests="1" assertions="4" errors="0" failures="0" skipped="0" time="0.062889">
-      <testsuite name="Tests\Integration\Controllers\LoginIntegrationTest" file="C:\laragon\www\el_mangle\tests\Integration\Controllers\LoginIntegrationTest.php" tests="1" assertions="4" errors="0" failures="0" skipped="0" time="0.062889">
-        <testcase name="testLogoutDestruyeSesionYRedirige" file="C:\laragon\www\el_mangle\tests\Integration\Controllers\LoginIntegrationTest.php" line="69" class="Tests\Integration\Controllers\LoginIntegrationTest" classname="Tests.Integration.Controllers.LoginIntegrationTest" assertions="4" time="0.062889"/>
+  <testsuite name="C:\laragon\www\el_mangle\phpunit.xml.dist" tests="3" assertions="7" errors="0" failures="0" skipped="0" time="0.123157">
+    <testsuite name="App" tests="3" assertions="7" errors="0" failures="0" skipped="0" time="0.123157">
+      <testsuite name="App\Controllers\MateriaPrimaTest" file="C:\laragon\www\el_mangle\tests\Controllers\MateriaPrimaTest.php" tests="1" assertions="1" errors="0" failures="0" skipped="0" time="0.020397">
+        <testcase name="testEliminarAplicaBorradoLogico" file="C:\laragon\www\el_mangle\tests\Controllers\MateriaPrimaTest.php" line="66" class="App\Controllers\MateriaPrimaTest" classname="App.Controllers.MateriaPrimaTest" assertions="1" time="0.020397"/>
+      </testsuite>
+      <testsuite name="Tests\Integration\Controllers\PlatillosIntegrationTest" file="C:\laragon\www\el_mangle\tests\Integration\Controllers\PlatillosIntegrationTest.php" tests="1" assertions="3" errors="0" failures="0" skipped="0" time="0.091906">
+        <testcase name="testEliminarAplicaBorradoLogico" file="C:\laragon\www\el_mangle\tests\Integration\Controllers\PlatillosIntegrationTest.php" line="115" class="Tests\Integration\Controllers\PlatillosIntegrationTest" classname="Tests.Integration.Controllers.PlatillosIntegrationTest" assertions="3" time="0.091906"/>
+      </testsuite>
+      <testsuite name="Tests\Integration\Controllers\UsuariosIntegrationTest" file="C:\laragon\www\el_mangle\tests\Integration\Controllers\UsuariosIntegrationTest.php" tests="1" assertions="3" errors="0" failures="0" skipped="0" time="0.010854">
+        <testcase name="testEliminarAplicaBorradoLogicoEnBD" file="C:\laragon\www\el_mangle\tests\Integration\Controllers\UsuariosIntegrationTest.php" line="94" class="Tests\Integration\Controllers\UsuariosIntegrationTest" classname="Tests.Integration.Controllers.UsuariosIntegrationTest" assertions="3" time="0.010854"/>
       </testsuite>
     </testsuite>
   </testsuite>

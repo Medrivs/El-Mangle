@@ -1,3 +1,9 @@
-Login Integration (Tests\Integration\Controllers\LoginIntegration)
- [x] Logout destruye sesion y redirige
+Materia Prima (App\Controllers\MateriaPrima)
+ [x] Eliminar aplica borrado logico
+
+Platillos Integration (Tests\Integration\Controllers\PlatillosIntegration)
+ [x] Eliminar aplica borrado logico
+
+Usuarios Integration (Tests\Integration\Controllers\UsuariosIntegration)
+ [x] Eliminar aplica borrado logico en b d
 
