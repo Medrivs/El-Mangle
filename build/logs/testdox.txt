@@ -1,3 +1,3 @@
-M03_Supervision System (Tests\System\M03_SupervisionSystem)
- [x] Flujo maestro de supervision y control
+Alertas Disponibilidad System (Tests\System\AlertasDisponibilidadSystem)
+ [x] Activacion de boton de panico y bloqueo manual
 

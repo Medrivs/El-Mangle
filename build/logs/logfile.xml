@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <testsuites>
-  <testsuite name="Tests\System\M03_SupervisionSystemTest" file="C:\laragon\www\el_mangle\tests\System\M03_SupervisionSystemTest.php" tests="1" assertions="13" errors="0" failures="0" skipped="0" time="0.132170">
-    <testcase name="testFlujoMaestroDeSupervisionYControl" file="C:\laragon\www\el_mangle\tests\System\M03_SupervisionSystemTest.php" line="23" class="Tests\System\M03_SupervisionSystemTest" classname="Tests.System.M03_SupervisionSystemTest" assertions="13" time="0.132170"/>
+  <testsuite name="Tests\System\AlertasDisponibilidadSystemTest" file="C:\laragon\www\el_mangle\tests\System\AlertasDisponibilidadSystemTest.php" tests="1" assertions="7" errors="0" failures="0" skipped="0" time="0.126586">
+    <testcase name="testActivacionDeBotonDePanicoYBloqueoManual" file="C:\laragon\www\el_mangle\tests\System\AlertasDisponibilidadSystemTest.php" line="23" class="Tests\System\AlertasDisponibilidadSystemTest" classname="Tests.System.AlertasDisponibilidadSystemTest" assertions="7" time="0.126586"/>
   </testsuite>
 </testsuites>
