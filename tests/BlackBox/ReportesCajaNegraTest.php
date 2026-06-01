@@ -66,18 +66,14 @@ class ReportesCajaNegraTest extends CIUnitTestCase
         $db->query("SET FOREIGN_KEY_CHECKS = 1");
     }
 
-    // PRUEBA 1: Prueba de Seguridad (Control de Acceso)
+    // PRUEBA 1: Prueba de Seguridad (Control de Acceso) - VULNERABILIDAD PARCHADA
     public function testSeguridadMeseroNoPuedeHacerCorteFinanciero()
     {
         $sesionMesero = ['isLoggedIn' => true, 'id_rol' => 3, 'id_usuario' => 7773];
         $respuesta = $this->withSession($sesionMesero)->post('caja/corte_caja');
         
-        // El sistema lo saca (Redirección), no importa si es a '/' o a otro lado, 
-        // lo importante es que YA NO está en 'caja/corte_caja'
-        $respuesta->assertRedirect();
-        
-        // Verificamos que NO entró al módulo (la URL resultante NO debe contener 'caja')
-        $this->assertStringNotContainsString('caja', $respuesta->response()->getHeaderLine('Location'));
+        // El sistema evalúa el id_rol, detecta que es un 3 (Mesero) y lo expulsa al inicio de forma segura
+        $respuesta->assertRedirectTo(base_url('/'));
     }
     // PRUEBA 2: Validación de Reglas de Negocio
     public function testRechazoDeReporteFinancieroConMesasActivas()

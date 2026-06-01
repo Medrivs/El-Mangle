@@ -1,13 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <testsuites>
-  <testsuite name="Tests\BlackBox\ReportesCajaNegraTest" file="C:\laragon\www\el_mangle\tests\BlackBox\ReportesCajaNegraTest.php" tests="3" assertions="8" errors="0" failures="1" skipped="0" time="0.395678">
-    <testcase name="testSeguridadMeseroNoPuedeHacerCorteFinanciero" file="C:\laragon\www\el_mangle\tests\BlackBox\ReportesCajaNegraTest.php" line="70" class="Tests\BlackBox\ReportesCajaNegraTest" classname="Tests.BlackBox.ReportesCajaNegraTest" assertions="2" time="0.183179">
-      <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\BlackBox\ReportesCajaNegraTest::testSeguridadMeseroNoPuedeHacerCorteFinanciero&#13;
-Failed asserting that 'http://localhost/el_mangle/caja' [ASCII](length: 31) does not contain "caja" [ASCII](length: 4).
-&#13;
-C:\laragon\www\el_mangle\tests\BlackBox\ReportesCajaNegraTest.php:80</failure>
-    </testcase>
-    <testcase name="testRechazoDeReporteFinancieroConMesasActivas" file="C:\laragon\www\el_mangle\tests\BlackBox\ReportesCajaNegraTest.php" line="83" class="Tests\BlackBox\ReportesCajaNegraTest" classname="Tests.BlackBox.ReportesCajaNegraTest" assertions="3" time="0.102756"/>
-    <testcase name="testReporteFinancieroExitosoSinMesasActivas" file="C:\laragon\www\el_mangle\tests\BlackBox\ReportesCajaNegraTest.php" line="95" class="Tests\BlackBox\ReportesCajaNegraTest" classname="Tests.BlackBox.ReportesCajaNegraTest" assertions="3" time="0.109743"/>
+  <testsuite name="Tests\BlackBox\AlertasCajaNegraTest" file="C:\laragon\www\el_mangle\tests\BlackBox\AlertasCajaNegraTest.php" tests="2" assertions="3" errors="0" failures="0" skipped="0" time="0.302022">
+    <testcase name="testMeseroNoPuedeVenderPlatilloBloqueadoOAgotado" file="C:\laragon\www\el_mangle\tests\BlackBox\AlertasCajaNegraTest.php" line="84" class="Tests\BlackBox\AlertasCajaNegraTest" classname="Tests.BlackBox.AlertasCajaNegraTest" assertions="2" time="0.187356"/>
+    <testcase name="testChefPuedeGestionarAlertasDePlatillos" file="C:\laragon\www\el_mangle\tests\BlackBox\AlertasCajaNegraTest.php" line="98" class="Tests\BlackBox\AlertasCajaNegraTest" classname="Tests.BlackBox.AlertasCajaNegraTest" assertions="1" time="0.114667"/>
   </testsuite>
 </testsuites>

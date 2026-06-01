@@ -1,5 +1,4 @@
-Reportes Caja Negra (Tests\BlackBox\ReportesCajaNegra)
- [ ] Seguridad mesero no puede hacer corte financiero
- [x] Rechazo de reporte financiero con mesas activas
- [x] Reporte financiero exitoso sin mesas activas
+Alertas Caja Negra (Tests\BlackBox\AlertasCajaNegra)
+ [x] Mesero no puede vender platillo bloqueado o agotado
+ [x] Chef puede gestionar alertas de platillos
 
