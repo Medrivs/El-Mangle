@@ -1,4 +1,3 @@
-Alertas Caja Negra (Tests\BlackBox\AlertasCajaNegra)
- [x] Mesero no puede vender platillo bloqueado o agotado
- [x] Chef puede gestionar alertas de platillos
+Produccion Cocina System (Tests\System\ProduccionCocinaSystem)
+ [x] Produccion cocina flujo y transicion
 

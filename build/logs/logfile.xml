@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <testsuites>
-  <testsuite name="Tests\BlackBox\AlertasCajaNegraTest" file="C:\laragon\www\el_mangle\tests\BlackBox\AlertasCajaNegraTest.php" tests="2" assertions="3" errors="0" failures="0" skipped="0" time="0.302022">
-    <testcase name="testMeseroNoPuedeVenderPlatilloBloqueadoOAgotado" file="C:\laragon\www\el_mangle\tests\BlackBox\AlertasCajaNegraTest.php" line="84" class="Tests\BlackBox\AlertasCajaNegraTest" classname="Tests.BlackBox.AlertasCajaNegraTest" assertions="2" time="0.187356"/>
-    <testcase name="testChefPuedeGestionarAlertasDePlatillos" file="C:\laragon\www\el_mangle\tests\BlackBox\AlertasCajaNegraTest.php" line="98" class="Tests\BlackBox\AlertasCajaNegraTest" classname="Tests.BlackBox.AlertasCajaNegraTest" assertions="1" time="0.114667"/>
+  <testsuite name="Tests\System\ProduccionCocinaSystemTest" file="C:\laragon\www\el_mangle\tests\System\ProduccionCocinaSystemTest.php" tests="1" assertions="9" errors="0" failures="0" skipped="0" time="0.156417">
+    <testcase name="testProduccionCocinaFlujoYTransicion" file="C:\laragon\www\el_mangle\tests\System\ProduccionCocinaSystemTest.php" line="20" class="Tests\System\ProduccionCocinaSystemTest" classname="Tests.System.ProduccionCocinaSystemTest" assertions="9" time="0.156417"/>
   </testsuite>
 </testsuites>

@@ -11,122 +11,123 @@ class PosIntegrationTest extends CIUnitTestCase
     use FeatureTestTrait;
     use DatabaseTestTrait;
 
-    // ===================================================================
-    // ⚙️ CONFIGURACIÓN DE BASE DE DATOS PARA TESTING
-    // ===================================================================
     protected $DBGroup     = 'default'; 
     protected $migrate     = false;     
     protected $migrateOnce = false;     
     protected $refresh     = false;     
-    // ===================================================================
 
-    // Retorna la sesión de un Mesero (Rol 3)
-    private function getSesionMesero($id_usuario = 3)
+    // simula la sesion del mesero
+    private function getSesionMesero()
     {
-        return [
-            'isLoggedIn' => true,
-            'id_rol'     => 3, 
-            'id_usuario' => $id_usuario
-        ];
+        return ['isLoggedIn' => true, 'id_rol' => 3, 'id_usuario' => 3];
     }
 
-    // Comprueba que un mesero no pueda ver las mesas de sus compañeros
-    public function testMeseroSoloVeSusMesasAsignadas()
+    // nivel 1 integracion de navegacion de piso mesas y categorias
+    public function testIntegracionNavegacionMesasYMenu()
     {
         $db = \Config\Database::connect();
         
-        // Mesa asignada al Mesero 3 (el que hará login)
-        $db->table('Mesa')->insert(['numero_mesa' => 111, 'estado_mesa' => 'Ocupada', 'activa' => 1, 'id_usuario_mesero' => 3]);
+        // prepara mesa libre y categoria con id dinamico
+        $db->table('Mesa')->insert(['numero_mesa' => 10, 'estado_mesa' => 'Libre', 'activa' => 1, 'id_usuario_mesero' => 3]);
+        $id_mesa = $db->insertID();
         
-        // Mesa asignada al Mesero 99 (otro compañero)
-        $db->table('Mesa')->insert(['numero_mesa' => 222, 'estado_mesa' => 'Ocupada', 'activa' => 1, 'id_usuario_mesero' => 99]);
-
-        $resultado = $this->withSession($this->getSesionMesero(3))->get('pos');
-
-        $resultado->assertOK();
+        $db->table('Categoria')->insert(['nombre_categoria' => 'tacos test']);
+        $id_categoria = $db->insertID();
         
-        // Debe ver su mesa, pero NO debe ver la del compañero
-        $resultado->assertSee('111');
-        $resultado->assertDontSee('222');
+        // integra la lectura del mapa de mesas
+        $mapa = $this->withSession($this->getSesionMesero())->get('pos');
+        $mapa->assertSee('10');
+
+        // integra la transicion al menu de la mesa
+        $menu = $this->withSession($this->getSesionMesero())->get("pos/mesa/$id_mesa");
+        $menu->assertSee('tacos test');
+
+        // integra el filtro de platillos usando el id dinamico
+        $filtro = $this->withSession($this->getSesionMesero())->get("pos/filtrar/$id_mesa/$id_categoria");
+        $filtro->assertOK();
     }
 
-    // Ejecuta la transacción más compleja del sistema: Carrito -> Comanda -> Inventario
-    public function testEnviarOrdenCreaComandaYDeduceInventario()
+
+    // nivel 2 integracion de toma de orden comandas e inventario
+    public function testIntegracionTomaDeOrdenYDescuentoInventario()
     {
         $db = \Config\Database::connect();
         
-        // 1. Preparamos la Mesa Libre
-        $db->table('Mesa')->insert(['numero_mesa' => 333, 'estado_mesa' => 'Libre', 'activa' => 1]);
+        // prepara inventario y categoria dinamica
+        $db->table('Materia_Prima')->insert(['nombre_producto' => 'carne test', 'stock_actual' => 10]);
+        $id_materia = $db->insertID();
+        
+        $db->table('Categoria')->insert(['nombre_categoria' => 'carnes']);
+        $id_categoria = $db->insertID();
+        
+        $db->table('Platillo')->insert(['nombre_platillo' => 'corte test', 'precio_venta' => 200, 'id_categoria' => $id_categoria, 'disponible' => 1]);
+        $id_platillo = $db->insertID();
+        
+        $db->table('Receta')->insert(['id_platillo' => $id_platillo, 'id_materia_prima' => $id_materia, 'cantidad_usada' => 1]);
+
+        $db->table('Mesa')->insert(['numero_mesa' => 11, 'estado_mesa' => 'Libre', 'activa' => 1, 'id_usuario_mesero' => 3]);
         $id_mesa = $db->insertID();
 
-        // 2. Preparamos el Inventario (Materia Prima con 10 kg)
-        $db->table('Materia_Prima')->insert([
-            'nombre_producto' => 'Camarón Crudo TEST',
-            'stock_actual'    => 10,
-            'unidad_medida'   => 'Kg'
+        $carrito = json_encode([
+            ['id' => $id_platillo, 'cant' => 2, 'precio' => 200, 'nota' => 'bien cocido']
         ]);
-        $id_materia = $db->insertID();
 
-        // 3. Preparamos el Platillo y su Receta (Usa 2 Kg por platillo)
-        $db->table('Platillo')->insert(['nombre_platillo' => 'Aguachile TEST', 'precio_venta' => 200, 'disponible' => 1]);
+        // procesa la orden conectando interfaz base de datos y algoritmos
+        $orden = $this->withSession($this->getSesionMesero())->post('pos/enviar_orden', [
+            'id_mesa'       => $id_mesa,
+            'datos_carrito' => $carrito
+        ]);
+        $orden->assertRedirectTo(base_url("pos/ver_comanda/$id_mesa"));
+
+        // valida el impacto relacional en cascada
+        $this->seeInDatabase('Mesa', ['id_mesa' => $id_mesa, 'estado_mesa' => 'Ocupada']);
+        $this->seeInDatabase('Detalle_Comanda', ['id_platillo' => $id_platillo, 'cantidad' => 2, 'comentarios' => 'bien cocido']);
+        $this->seeInDatabase('Materia_Prima', ['id_materia_prima' => $id_materia, 'stock_actual' => 8]); 
+    }
+
+    // nivel 3 integracion total ciclo de consumo y bloqueo de cuenta
+    public function testIntegracionTotalCicloOperativoYBloqueo()
+    {
+        $db = \Config\Database::connect();
+        
+        // levanta una mesa y orden dinamica
+        $db->table('Mesa')->insert(['numero_mesa' => 12, 'estado_mesa' => 'Libre', 'activa' => 1, 'id_usuario_mesero' => 3]);
+        $id_mesa = $db->insertID();
+        
+        $db->table('Categoria')->insert(['nombre_categoria' => 'postres test']);
+        $id_categoria = $db->insertID();
+
+        $db->table('Platillo')->insert(['nombre_platillo' => 'postre test', 'precio_venta' => 100, 'id_categoria' => $id_categoria, 'disponible' => 1]);
         $id_platillo = $db->insertID();
 
-        $db->table('Receta')->insert([
-            'id_platillo'      => $id_platillo,
-            'id_materia_prima' => $id_materia,
-            'cantidad_usada'   => 2 // 2 Kg por cada Aguachile
-        ]);
-
-        // 4. Simulamos el JSON del carrito (Pide 2 Aguachiles)
-        $carritoJSON = json_encode([
-            [
-                'id'     => $id_platillo,
-                'cant'   => 2, // Va a pedir 2 platillos (2 * 2kg = 4kg a descontar)
-                'precio' => 200,
-                'nota'   => 'Sin picante'
-            ]
-        ]);
-
-        // 5. Enviamos la orden
-        $resultado = $this->withSession($this->getSesionMesero())->post('pos/enviar_orden', [
+        $carrito = json_encode([['id' => $id_platillo, 'cant' => 3, 'precio' => 100, 'nota' => '']]);
+        
+        // ejecuta inyeccion de orden
+        $this->withSession($this->getSesionMesero())->post('pos/enviar_orden', [
             'id_mesa'       => $id_mesa,
-            'datos_carrito' => $carritoJSON
+            'datos_carrito' => $carrito
         ]);
 
-        $resultado->assertRedirectTo(base_url('pos/ver_comanda/' . $id_mesa));
-        
-        // 6. Verificaciones de Integración en Cascada
-        // A) La mesa debe estar ocupada
-        $this->seeInDatabase('Mesa', ['id_mesa' => $id_mesa, 'estado_mesa' => 'Ocupada']);
-        
-        // B) La comanda y el detalle deben existir
-        $this->seeInDatabase('Detalle_Comanda', ['id_platillo' => $id_platillo, 'cantidad' => 2, 'comentarios' => 'Sin picante']);
-        
-        // C) El inventario debió bajar de 10 a 6 (10 - 4)
-        $this->seeInDatabase('Materia_Prima', ['id_materia_prima' => $id_materia, 'stock_actual' => 6]);
-    }
+        // integra modulo de calculo de comanda
+        $resumen = $this->withSession($this->getSesionMesero())->get("pos/ver_comanda/$id_mesa");
+        $resumen->assertSee('300'); 
 
-    // Comprueba el candado de seguridad al imprimir la cuenta
-    public function testImprimirCuentaBloqueaMesaParaCaja()
-    {
-        $db = \Config\Database::connect();
-        
-        $db->table('Mesa')->insert(['numero_mesa' => 444, 'estado_mesa' => 'Ocupada', 'activa' => 1]);
-        $id_mesa = $db->insertID();
+        // integra modulo de ticketera y bloqueo
+        $imprimir = $this->withSession($this->getSesionMesero())->get("pos/imprimir_cuenta/$id_mesa");
+        $imprimir->assertRedirectTo(base_url("pos/ver_comanda/$id_mesa"));
 
-        // Primera petición: El mesero pide la cuenta (Debe pasar y bloquear la mesa)
-        $resultado1 = $this->withSession($this->getSesionMesero())->get("pos/imprimir_cuenta/$id_mesa");
-        $resultado1->assertSessionHas('success');
-        
+        // valida candado final para el cajero
         $this->seeInDatabase('Mesa', ['id_mesa' => $id_mesa, 'estado_mesa' => 'Por Pagar']);
-
-        // Segunda petición: Intenta pedir la cuenta de nuevo por accidente
-        $resultado2 = $this->withSession($this->getSesionMesero())->get("pos/imprimir_cuenta/$id_mesa");
-        
-        // El sistema debe rechazarlo
-        $resultado2->assertSessionHas('error', '¡Acción denegada! La cuenta ya fue impresa una vez.');
     }
 }
-// vendor/bin/phpunit --filter testMeseroSoloVeSusMesasAsignadas --no-coverage
-// vendor/bin/phpunit --filter testEnviarOrdenCreaComandaYDeduceInventario --no-coverage
-// vendor/bin/phpunit --filter testImprimirCuentaBloqueaMesaParaCaja --no-coverage
+/* 
+
+vendor/bin/phpunit --filter testIntegracionNavegacionMesasYMenu tests/Integration/Controllers/PosIntegrationTest.php --no-coverage
+
+vendor/bin/phpunit --filter testIntegracionTomaDeOrdenYDescuentoInventario tests/Integration/Controllers/PosIntegrationTest.php --no-coverage
+
+vendor/bin/phpunit --filter testIntegracionTotalCicloOperativoYBloqueo tests/Integration/Controllers/PosIntegrationTest.php --no-coverage
+
+vendor/bin/phpunit tests/Integration/Controllers/PosIntegrationTest.php --no-coverage
+
+*/

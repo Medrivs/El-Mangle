@@ -11,26 +11,21 @@ class CatalogoSystemTest extends CIUnitTestCase
     use FeatureTestTrait;
     use DatabaseTestTrait;
 
-    // ===================================================================
-    // ⚙️ CONFIGURACIÓN DE BASE DE DATOS
-    // ===================================================================
     protected $DBGroup     = 'default'; 
     protected $migrate     = false;     
     protected $migrateOnce = false;     
     protected $refresh     = false;     
-    // ===================================================================
 
-    public function testCicloDeVidaDelMenuYReflejoEnPOS()
+    // prueba de ciclo de vida del menu y reflejo en el punto de venta
+    public function testCatalogoCicloVidaYReflejoPos()
     {
         $db = \Config\Database::connect();
         
-        // ===================================================================
-        // FASE 0: AISLAMIENTO Y PREPARACIÓN
-        // ===================================================================
+        // fase 0 aislamiento y preparacion
         $db->table('Rol')->ignore(true)->insert(['id_rol' => 1, 'nombre_rol' => 'Administrador']);
         $db->table('Rol')->ignore(true)->insert(['id_rol' => 3, 'nombre_rol' => 'Mesero']);
 
-        // Creamos a los actores de nuestra historia
+        // creamos a los actores de la prueba
         $passwordHash = password_hash('1234', PASSWORD_DEFAULT);
         $db->query("INSERT INTO Usuario (id_usuario, nombre_completo, id_rol, username, password, estado_usuario) 
                     VALUES (1, 'Admin Catalogo', 1, 'admin_cat', '$passwordHash', 1) 
@@ -40,14 +35,12 @@ class CatalogoSystemTest extends CIUnitTestCase
                     VALUES (2, 'Mesero Catalogo', 3, 'mesero_cat', '$passwordHash', 1) 
                     ON DUPLICATE KEY UPDATE password='$passwordHash', estado_usuario=1");
 
-        // Creamos un entorno base: Categoría y un Ingrediente
+        // creamos un entorno base categoria e ingrediente
         $db->table('Categoria')->ignore(true)->insert(['id_categoria' => 150, 'nombre_categoria' => 'Especialidades E2E']);
         $db->table('Materia_Prima')->insert(['nombre_producto' => 'Langosta Cruda E2E', 'stock_actual' => 20, 'unidad_medida' => 'Kg']);
         $id_materia = $db->insertID();
 
-        // ===================================================================
-        // FASE 1: REGISTRO DE NUEVO PLATILLO (El Admin trabaja)
-        // ===================================================================
+        // fase 1 registro de nuevo platillo el admin trabaja
         $sesionAdmin = ['isLoggedIn' => true, 'id_rol' => 1, 'id_usuario' => 1];
 
         $datosPlatillo = [
@@ -57,25 +50,23 @@ class CatalogoSystemTest extends CIUnitTestCase
             'id_categoria'    => 150
         ];
 
-        // El admin guarda el platillo
+        // el admin guarda el platillo
         $this->withSession($sesionAdmin)->post('platillos/guardar', $datosPlatillo);
 
-        // Rescatamos el ID dinámico que MySQL le dio a la Langosta
+        // rescatamos el id dinamico que mysql le dio a la langosta
         $platilloNuevo = $db->table('Platillo')->where('nombre_platillo', 'Langosta al Mojo E2E')->get()->getRowArray();
-        $this->assertNotNull($platilloNuevo, 'El platillo no se guardó en la BD.');
+        $this->assertNotNull($platilloNuevo, 'el platillo no se guardo en la bd');
         $id_platillo = $platilloNuevo['id_platillo'];
 
-        // Le asignamos su receta (1 kg de langosta cruda)
+        // le asignamos su receta
         $db->table('Receta')->insert([
             'id_platillo'      => $id_platillo,
             'id_materia_prima' => $id_materia,
             'cantidad_usada'   => 1
         ]);
 
-        // ===================================================================
-        // FASE 2: AJUSTE DE PRECIOS
-        // ===================================================================
-        // Subió la inflación, el admin actualiza el precio a $650
+        // fase 2 ajuste de precios
+        // el admin actualiza el precio a 650
         $datosActualizados = [
             'nombre_platillo' => 'Langosta al Mojo E2E',
             'descripcion'     => 'Platillo de prueba (Editado)',
@@ -86,35 +77,33 @@ class CatalogoSystemTest extends CIUnitTestCase
 
         $this->withSession($sesionAdmin)->post("platillos/actualizar/$id_platillo", $datosActualizados);
 
-        // Verificamos que el cambio financiero se aplicó
+        // verificamos que el cambio financiero se aplico
         $this->seeInDatabase('Platillo', [
             'id_platillo'  => $id_platillo,
             'precio_venta' => 650.00
         ]);
 
-        // ===================================================================
-        // FASE 3: ELIMINACIÓN Y VERIFICACIÓN CRUZADA EN POS (El Mesero)
-        // ===================================================================
-        // Se acabó la temporada. El admin da de baja el platillo.
+        // fase 3 eliminacion y verificacion cruzada en pos
+        // el admin da de baja el platillo
         $this->withSession($sesionAdmin)->get("platillos/eliminar/$id_platillo");
 
-        // Comprobamos el borrado lógico
+        // comprobamos el borrado logico
         $this->seeInDatabase('Platillo', [
             'id_platillo' => $id_platillo,
             'disponible'  => 0
         ]);
 
-        // AHORA EL MESERO: Entra al sistema de punto de venta
+        // el mesero entra al sistema de punto de venta
         $sesionMesero = ['isLoggedIn' => true, 'id_rol' => 3, 'id_usuario' => 2];
 
-        // Le asignamos una mesa libre al mesero para que pueda abrir el menú
+        // asignamos mesa libre al mesero para abrir el menu
         $db->table('Mesa')->insert(['numero_mesa' => 8888, 'estado_mesa' => 'Libre', 'activa' => 1, 'id_usuario_mesero' => 2]);
         $id_mesa = $db->insertID();
 
-        // El mesero filtra por la categoría 150 (Especialidades E2E)
+        // el mesero filtra por la categoria 150
         $pantallaPos = $this->withSession($sesionMesero)->get("pos/filtrar/$id_mesa/150");
 
-        // VERIFICACIÓN FINAL: El HTML que recibe el mesero NO DEBE contener a la Langosta
+        // verificacion final el html del pos no debe contener el platillo
         $pantallaPos->assertDontSee('Langosta al Mojo E2E');
     }
 }

@@ -11,112 +11,106 @@ class UsuariosIntegrationTest extends CIUnitTestCase
     use FeatureTestTrait;
     use DatabaseTestTrait;
 
-    protected $DBGroup     = 'default'; // Fuerza a usar la conexión de MySQL Workbench
-    protected $migrate     = false;     // Apaga las migraciones de CI4
-    protected $migrateOnce = false;     // Evita que busque archivos de migración
-    protected $refresh     = false;     // Evita que intente borrar y recrear tu base de datos
+    protected $DBGroup     = 'default'; 
+    protected $migrate     = false;     
+    protected $migrateOnce = false;     
+    protected $refresh     = false;     
 
-    // Simula entrar a la pantalla de usuarios y verifica que muestre los datos que están en MySQL
-    public function testVistaIndexCargaUsuariosDesdeBD()
+    // NIVEL 1: INTEGRACIÓN DE AGREGAR + ELIMINAR
+
+    public function testIntegracionAgregarYEliminar()
     {
-        $db = \Config\Database::connect('default');
-        $db->table('Usuario')->insert([
-            'nombre_completo' => 'Admin Visual',
-            'id_rol'          => 1,
-            'username'        => 'admin_vista',
+        $db = \Config\Database::connect();
+        
+        $alta = $this->call('post', 'usuarios/guardar', [
+            'nombre_completo' => 'Empleado Nivel Uno',
+            'id_rol'          => 3,
+            'username'        => 'emp_nivel1',
             'password'        => '1234',
-            'estado_usuario'  => 1
+            'telefono'        => '1111111111',
+            'estado_usuario'  => 'on'
         ]);
+        $alta->assertRedirectTo(base_url('usuarios'));
 
-        $resultado = $this->call('get', 'usuarios');
+        $usuario = $db->table('Usuario')->where('username', 'emp_nivel1')->get()->getRowArray();
+        $idGenerado = $usuario['id_usuario'];
 
-        $resultado->assertOK();
-        $resultado->assertSee('Admin Visual');
+        $baja = $this->call('get', "usuarios/eliminar/$idGenerado");
+        $baja->assertRedirectTo(base_url('usuarios'));
+
+        $this->seeInDatabase('Usuario', ['id_usuario' => $idGenerado, 'estado_usuario' => 0]);
     }
 
-    // Simula enviar el formulario de "Agregar" y comprueba que el registro aparezca físicamente en la BD
-    public function testGuardarNuevoUsuarioEnBaseDeDatosReal()
+    // NIVEL 2: INTEGRACIÓN DE AGREGAR + ACTUALIZAR + ELIMINAR
+    public function testIntegracionAgregarActualizarYEliminar()
     {
-        $datos = [
-            'nombre_completo' => 'Cajero Nuevo',
+        $db = \Config\Database::connect();
+        
+        $this->call('post', 'usuarios/guardar', [
+            'nombre_completo' => 'Empleado Nivel Dos',
+            'id_rol'          => 3,
+            'username'        => 'emp_nivel2',
+            'password'        => '1234',
+            'telefono'        => '2222222222',
+            'estado_usuario'  => 'on'
+        ]);
+        
+        $usuario = $db->table('Usuario')->where('username', 'emp_nivel2')->get()->getRowArray();
+        $idGenerado = $usuario['id_usuario'];
+
+        $edicion = $this->call('post', "usuarios/actualizar/$idGenerado", [
+            'nombre_completo' => 'Empleado Nivel Dos (Editado)',
+            'id_rol'          => 3,
+            'username'        => 'emp_nivel2',
+            'telefono'        => '9999999999',
+            'estado_usuario'  => 'on'
+        ]);
+        $edicion->assertRedirectTo(base_url('usuarios'));
+        
+        $this->seeInDatabase('Usuario', ['id_usuario' => $idGenerado, 'telefono' => '9999999999']);
+
+        $this->call('get', "usuarios/eliminar/$idGenerado");
+        $this->seeInDatabase('Usuario', ['id_usuario' => $idGenerado, 'estado_usuario' => 0]);
+    }
+
+    // NIVEL 3: INTEGRACIÓN TOTAL (AGREGAR + LEER + ACTUALIZAR + ELIMINAR)
+    public function testIntegracionTotalDelModuloUsuarios()
+    {
+        $db = \Config\Database::connect();
+        
+        $this->call('post', 'usuarios/guardar', [
+            'nombre_completo' => 'Empleado Nivel Tres',
             'id_rol'          => 5,
-            'username'        => 'cajero_integ',
+            'username'        => 'emp_nivel3',
             'password'        => '1234',
-            'telefono'        => '4771112233',
-            'fecha_ingreso'   => '2026-05-29',
+            'telefono'        => '3333333333',
             'estado_usuario'  => 'on'
-        ];
-
-        $resultado = $this->call('post', 'usuarios/guardar', $datos);
-
-        $resultado->assertRedirectTo(base_url('usuarios'));
-        $this->seeInDatabase('Usuario', [
-            'nombre_completo' => 'Cajero Nuevo',
-            'username'        => 'cajero_integ',
-            'telefono'        => '4771112233',
-            'estado_usuario'  => 1
         ]);
-    }
+        
+        $usuario = $db->table('Usuario')->where('username', 'emp_nivel3')->get()->getRowArray();
+        $idGenerado = $usuario['id_usuario'];
 
-    // Crea un usuario temporal, simula que lo editamos y verifica que sus datos cambien en MySQL
-    public function testActualizarUsuarioModificaLaBaseDeDatos()
-    {
-        $db = \Config\Database::connect();
-        $db->table('Usuario')->insert([
-            'nombre_completo' => 'Mesero Viejo',
-            'id_rol'          => 3,
-            'username'        => 'mesero_v',
-            'password'        => '0000',
-            'telefono'        => '000',
-            'estado_usuario'  => 1
-        ]);
-        $idInsertado = $db->insertID();
+        $pantalla = $this->call('get', 'usuarios');
+        $pantalla->assertSee('Empleado Nivel Tres');
 
-        $datosActualizados = [
-            'nombre_completo' => 'Mesero Renombrado',
-            'id_rol'          => 3,
-            'username'        => 'mesero_v',
-            'telefono'        => '111',
+        $this->call('post', "usuarios/actualizar/$idGenerado", [
+            'nombre_completo' => 'Empleado Nivel Tres (Ascendido)',
+            'id_rol'          => 1, 
+            'username'        => 'emp_nivel3',
+            'telefono'        => '3333333333',
             'estado_usuario'  => 'on'
-        ];
-
-        $resultado = $this->call('post', 'usuarios/actualizar/' . $idInsertado, $datosActualizados);
-
-        $resultado->assertRedirectTo(base_url('usuarios'));
-        $this->seeInDatabase('Usuario', [
-            'id_usuario'      => $idInsertado,
-            'nombre_completo' => 'Mesero Renombrado',
-            'telefono'        => '111'
         ]);
-    }
 
-    // Simula presionar el botón eliminar y asegura que MySQL cambie el estado a 0 (baja lógica) en lugar de borrarlo
-    public function testEliminarAplicaBorradoLogicoEnBD()
-    {
-        $db = \Config\Database::connect();
-        $db->table('Usuario')->insert([
-            'nombre_completo' => 'Usuario A Borrar',
-            'id_rol'          => 2,
-            'username'        => 'borrar_test',
-            'password'        => '111',
-            'estado_usuario'  => 1
-        ]);
-        $idInsertado = $db->insertID();
-
-        $resultado = $this->call('get', 'usuarios/eliminar/' . $idInsertado);
-
-        $resultado->assertRedirectTo(base_url('usuarios'));
+        $this->call('get', "usuarios/eliminar/$idGenerado");
+        
         $this->seeInDatabase('Usuario', [
-            'id_usuario'     => $idInsertado,
-            'estado_usuario' => 0
+            'id_usuario'      => $idGenerado, 
+            'nombre_completo' => 'Empleado Nivel Tres (Ascendido)',
+            'estado_usuario'  => 0
         ]);
     }
 }
 
-
-
-
-// vendor/bin/phpunit --filter testVistaIndexCargaUsuariosDesdeBD --no-coverage
-// vendor/bin/phpunit --filter testGuardarNuevoUsuarioEnBaseDeDatosReal --no-coverage
-// vendor/bin/phpunit --filter testActualizarUsuarioModificaLaBaseDeDatos --no-coverage
-// vendor/bin/phpunit --filter testEliminarAplicaBorradoLogicoEnBD --no-coverage
+//vendor/bin/phpunit --filter testIntegracionAgregarYEliminar --no-coverage
+//vendor/bin/phpunit --filter testIntegracionAgregarActualizarYEliminar --no-coverage
+//vendor/bin/phpunit --filter testIntegracionTotalDelModuloUsuarios --no-coverage

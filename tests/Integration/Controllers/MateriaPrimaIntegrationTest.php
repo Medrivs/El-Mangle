@@ -11,90 +11,110 @@ class MateriaPrimaIntegrationTest extends CIUnitTestCase
     use FeatureTestTrait;
     use DatabaseTestTrait;
 
-    public function testVistaInventarioMuestraDatosReales()
+    protected $DBGroup     = 'default'; 
+    protected $migrate     = false;     
+    protected $migrateOnce = false;     
+    protected $refresh     = false;     
+
+    // NIVEL 1: INTEGRACIÓN DE AGREGAR + ELIMINAR
+    public function testIntegracionAgregarYEliminar()
     {
         $db = \Config\Database::connect();
-        $db->table('Materia_Prima')->insert([
-            'nombre_producto' => 'Pulpo Congelado',
-            'stock_actual'    => 10.5,
-            'estado_materia'  => 1
-        ]);
-
-        $resultado = $this->call('get', 'materiaprima');
-
-        $resultado->assertOK();
-        $resultado->assertSee('Pulpo Congelado');
-        $resultado->assertSee('10.5');
-    }
-
-    public function testGuardarNuevoIngredienteEnBD()
-    {
-        $datos = [
-            'nombre_producto'      => 'Camarón Pacotilla',
-            'stock_actual'         => 20,
-            'precio_compra'        => 250.50,
+        
+        $alta = $this->call('post', 'materiaprima/guardar', [
+            'nombre_producto'      => 'Pulpo Prueba Nivel 1',
+            'stock_actual'         => 10,
+            'precio_compra'        => 200.50,
             'unidad_medida'        => 'Kg',
-            'stock_minimo'         => 5,
-            'fecha_ultima_entrada' => '2026-05-29'
-        ];
-
-        $_SESSION['id_usuario'] = 1; // Simulamos sesión activa
-
-        $resultado = $this->call('post', 'materiaprima/guardar', $datos);
-
-        $resultado->assertRedirectTo(base_url('materiaprima'));
-        $this->seeInDatabase('Materia_Prima', [
-            'nombre_producto' => 'Camarón Pacotilla',
-            'unidad_medida'   => 'Kg',
-            'estado_materia'  => 1
+            'stock_minimo'         => 2,
+            'fecha_ultima_entrada' => '2026-06-01'
         ]);
+        $alta->assertRedirectTo(base_url('materiaprima'));
+
+        $materia = $db->table('Materia_Prima')->where('nombre_producto', 'Pulpo Prueba Nivel 1')->get()->getRowArray();
+        $idGenerado = $materia['id_materia_prima'];
+
+        $baja = $this->call('get', "materiaprima/eliminar/$idGenerado");
+        $baja->assertRedirectTo(base_url('materiaprima'));
+
+        $this->seeInDatabase('Materia_Prima', ['id_materia_prima' => $idGenerado, 'estado_materia' => 0]);
     }
 
-    public function testActualizarStockDeIngredienteEnBD()
+    // NIVEL 2: INTEGRACIÓN DE AGREGAR + ACTUALIZAR + ELIMINAR
+    public function testIntegracionAgregarActualizarYEliminar()
     {
         $db = \Config\Database::connect();
-        $db->table('Materia_Prima')->insert([
-            'nombre_producto' => 'Limón sin semilla',
-            'stock_actual'    => 2,
-            'unidad_medida'   => 'Kg',
-            'estado_materia'  => 1
+        
+        $this->call('post', 'materiaprima/guardar', [
+            'nombre_producto'      => 'Camaron Prueba Nivel 2',
+            'stock_actual'         => 5,
+            'precio_compra'        => 150.00,
+            'unidad_medida'        => 'Kg',
+            'stock_minimo'         => 2,
+            'fecha_ultima_entrada' => '2026-06-01'
         ]);
-        $idInsertado = $db->insertID();
+        
+        $materia = $db->table('Materia_Prima')->where('nombre_producto', 'Camaron Prueba Nivel 2')->get()->getRowArray();
+        $idGenerado = $materia['id_materia_prima'];
 
-        $datosActualizados = [
-            'nombre_producto' => 'Limón sin semilla',
-            'stock_actual'    => 15, // Aumentamos el stock
-            'unidad_medida'   => 'Kg',
-            'estado_materia'  => 'on'
-        ];
-
-        $resultado = $this->call('post', 'materiaprima/actualizar/' . $idInsertado, $datosActualizados);
-
-        $this->seeInDatabase('Materia_Prima', [
-            'id_materia_prima' => $idInsertado,
-            'stock_actual'     => 15
+        $edicion = $this->call('post', "materiaprima/actualizar/$idGenerado", [
+            'nombre_producto'      => 'Camaron Prueba Nivel 2',
+            'stock_actual'         => 15, // Actualizamos el stock (Abastecimiento)
+            'precio_compra'        => 155.00, // Cambio de precio
+            'unidad_medida'        => 'Kg',
+            'stock_minimo'         => 2,
+            'fecha_ultima_entrada' => '2026-06-02',
+            'estado_materia'       => 'on'
         ]);
+        $edicion->assertRedirectTo(base_url('materiaprima'));
+        
+        $this->seeInDatabase('Materia_Prima', ['id_materia_prima' => $idGenerado, 'stock_actual' => 15]);
+
+        $this->call('get', "materiaprima/eliminar/$idGenerado");
+        $this->seeInDatabase('Materia_Prima', ['id_materia_prima' => $idGenerado, 'estado_materia' => 0]);
     }
 
-    public function testEliminarIngredienteAplicaBorradoLogico()
+    // NIVEL 3: INTEGRACIÓN TOTAL (AGREGAR + LEER + ACTUALIZAR + ELIMINAR)
+    public function testIntegracionTotalDelModuloMateriaPrima()
     {
         $db = \Config\Database::connect();
-        $db->table('Materia_Prima')->insert([
-            'nombre_producto' => 'Ingrediente Caducado',
-            'stock_actual'    => 0,
-            'estado_materia'  => 1
+        
+        $this->call('post', 'materiaprima/guardar', [
+            'nombre_producto'      => 'Salmon Prueba Nivel 3',
+            'stock_actual'         => 8,
+            'precio_compra'        => 300.00,
+            'unidad_medida'        => 'Kg',
+            'stock_minimo'         => 3,
+            'fecha_ultima_entrada' => '2026-06-01'
         ]);
-        $idInsertado = $db->insertID();
+        
+        $materia = $db->table('Materia_Prima')->where('nombre_producto', 'Salmon Prueba Nivel 3')->get()->getRowArray();
+        $idGenerado = $materia['id_materia_prima'];
 
-        $resultado = $this->call('get', 'materiaprima/eliminar/' . $idInsertado);
+        $pantalla = $this->call('get', 'materiaprima');
+        $pantalla->assertSee('Salmon Prueba Nivel 3');
+        $pantalla->assertSee('300.00');
 
+        $this->call('post', "materiaprima/actualizar/$idGenerado", [
+            'nombre_producto'      => 'Salmon Prueba Nivel 3 (Fresco)',
+            'stock_actual'         => 8,
+            'precio_compra'        => 320.00,
+            'unidad_medida'        => 'Kg',
+            'stock_minimo'         => 3,
+            'fecha_ultima_entrada' => '2026-06-03',
+            'estado_materia'       => 'on'
+        ]);
+
+        $this->call('get', "materiaprima/eliminar/$idGenerado");
+        
         $this->seeInDatabase('Materia_Prima', [
-            'id_materia_prima' => $idInsertado,
+            'id_materia_prima' => $idGenerado, 
+            'nombre_producto'  => 'Salmon Prueba Nivel 3 (Fresco)',
             'estado_materia'   => 0
         ]);
     }
 }
-// vendor/bin/phpunit --filter testVistaInventarioMuestraDatosReales --no-coverage
-// vendor/bin/phpunit --filter testGuardarNuevoIngredienteEnBD --no-coverage
-// vendor/bin/phpunit --filter testActualizarStockDeIngredienteEnBD --no-coverage
-// vendor/bin/phpunit --filter testEliminarIngredienteAplicaBorradoLogico --no-coverage
+
+// vendor/bin/phpunit --filter testIntegracionAgregarYEliminar tests/Integration/Controllers/MateriaPrimaIntegrationTest.php --no-coverage
+// vendor/bin/phpunit --filter testIntegracionAgregarActualizarYEliminar tests/Integration/Controllers/MateriaPrimaIntegrationTest.php --no-coverage
+// vendor/bin/phpunit --filter testIntegracionTotalDelModuloMateriaPrima tests/Integration/Controllers/MateriaPrimaIntegrationTest.php --no-coverage

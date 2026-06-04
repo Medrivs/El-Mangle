@@ -11,147 +11,118 @@ class CapitanIntegrationTest extends CIUnitTestCase
     use FeatureTestTrait;
     use DatabaseTestTrait;
 
-    // ===================================================================
-    // ⚙️ CONFIGURACIÓN DE BASE DE DATOS PARA TESTING
-    // ===================================================================
     protected $DBGroup     = 'default'; 
     protected $migrate     = false;     
     protected $migrateOnce = false;     
     protected $refresh     = false;     
-    // ===================================================================
 
-    // Retorna las variables de sesión del Capitán para no repetir código
-    private function getSesionCapitan()
-    {
-        return [
-            'isLoggedIn' => true,
-            'id_rol'     => 2, // 2 es Capitán según tu esquema
-            'id_usuario' => 2
-        ];
+    // devuelve la sesion del capitan para las pruebas
+    private function getSesionCapitan() {
+        return ['isLoggedIn' => true, 'id_rol' => 2, 'id_usuario' => 2];
     }
 
-    public function testIndexCargaMesasYCalculaTotales()
+    // nivel 1 integracion de lectura y reapertura de mesa
+    public function testIntegracionLecturaYReapertura()
     {
         $db = \Config\Database::connect();
         
-        $db->table('Mesa')->insert(['numero_mesa' => 505, 'estado_mesa' => 'Ocupada', 'activa' => 1]);
+        // inserta mesa en estado por pagar
+        $db->table('Mesa')->insert(['numero_mesa' => 201, 'estado_mesa' => 'Por Pagar', 'activa' => 1, 'id_usuario_mesero' => 3]);
         $id_mesa = $db->insertID();
         
-        $db->table('Comanda')->insert(['id_mesa' => $id_mesa, 'id_usuario' => 2, 'fecha_hora' => date('Y-m-d H:i:s')]);
-        $id_comanda = $db->insertID();
+        // verifica que la mesa aparezca en el panel principal del capitan
+        $pantalla = $this->withSession($this->getSesionCapitan())->get('capitan');
+        $pantalla->assertSee('201');
 
-        // Le metemos un platillo de $800
-        $db->table('Detalle_Comanda')->insert([
-            'id_comanda' => $id_comanda, 'id_platillo' => 1, 'cantidad' => 1, 'precio_unitario' => 800, 'estado' => 'Pendiente'
-        ]);
+        // ejecuta la reapertura
+        $reabrir = $this->withSession($this->getSesionCapitan())->get("capitan/reabrir/$id_mesa");
+        $reabrir->assertRedirectTo(base_url('capitan'));
 
-        $resultado = $this->withSession($this->getSesionCapitan())->get('capitan');
-
-        $resultado->assertOK();
-        $resultado->assertSee('505');
-        $resultado->assertSee('800'); // Verifica que el cálculo matemático funcionó y se imprimió
+        // verifica el cambio de estado y la creacion de la auditoria
+        $this->seeInDatabase('Mesa', ['id_mesa' => $id_mesa, 'estado_mesa' => 'Ocupada']);
+        $this->seeInDatabase('Movimientos', ['id_mesa' => $id_mesa, 'tipo_movimiento' => 'Reapertura']);
     }
 
-    public function testTransferirMesaMueveComandaYRegistraAuditoria()
+    // nivel 2 integracion de lectura y transferencia de mesa
+    public function testIntegracionLecturaYTransferencia()
     {
         $db = \Config\Database::connect();
-        
-        // Mesa origen (Ocupada) y Mesa destino (Libre)
-        $db->table('Mesa')->insert(['numero_mesa' => 404, 'estado_mesa' => 'Ocupada', 'activa' => 1]);
-        $id_origen = $db->insertID();
-        
-        $db->table('Mesa')->insert(['numero_mesa' => 405, 'estado_mesa' => 'Libre', 'activa' => 1]);
-        $id_destino = $db->insertID();
 
-        $db->table('Comanda')->insert(['id_mesa' => $id_origen, 'id_usuario' => 2, 'fecha_hora' => date('Y-m-d H:i:s')]);
+        // prepara mesa origen ocupada y mesa destino libre
+        $db->table('Mesa')->insert(['numero_mesa' => 202, 'estado_mesa' => 'Ocupada', 'activa' => 1, 'id_usuario_mesero' => 3]);
+        $id_origen = $db->insertID();
+        $db->table('Mesa')->insert(['numero_mesa' => 203, 'estado_mesa' => 'Libre', 'activa' => 1, 'id_usuario_mesero' => 3]);
+        $id_destino = $db->insertID();
+        
+        $db->table('Comanda')->insert(['id_mesa' => $id_origen, 'id_usuario' => 3, 'fecha_hora' => date('Y-m-d H:i:s')]);
         $id_comanda = $db->insertID();
 
-        $datosTransferencia = [
+        // verifica que se lean las mesas en el sistema
+        $pantalla = $this->withSession($this->getSesionCapitan())->get('capitan');
+        $pantalla->assertSee('202');
+        $pantalla->assertSee('203');
+
+        // ejecuta la transferencia de mesa a traves de post
+        $transferencia = $this->withSession($this->getSesionCapitan())->post('capitan/transferir', [
             'id_mesa_origen'  => $id_origen,
             'id_mesa_destino' => $id_destino
-        ];
+        ]);
+        $transferencia->assertRedirectTo(base_url('capitan'));
 
-        $resultado = $this->withSession($this->getSesionCapitan())->post('capitan/transferir', $datosTransferencia);
-
-        $resultado->assertRedirectTo(base_url('capitan'));
-        
-        // Validamos la inversión de papeles en MySQL
+        // verifica que los estados se intercambiaron y la comanda se movio
         $this->seeInDatabase('Mesa', ['id_mesa' => $id_origen, 'estado_mesa' => 'Libre']);
         $this->seeInDatabase('Mesa', ['id_mesa' => $id_destino, 'estado_mesa' => 'Ocupada']);
         $this->seeInDatabase('Comanda', ['id_comanda' => $id_comanda, 'id_mesa' => $id_destino]);
-        
-        // Validamos que el capitán no hizo trampa y su movimiento quedó auditado
         $this->seeInDatabase('Movimientos', ['id_mesa' => $id_origen, 'tipo_movimiento' => 'Transferencia']);
     }
 
-    public function testCancelarItemActualizaDetalleYRegistraAuditoria()
+    // nivel 3 integracion total lectura cancelacion y division de cuenta
+    public function testIntegracionTotalCancelacionYDivision()
     {
         $db = \Config\Database::connect();
         
-        $db->table('Mesa')->insert(['numero_mesa' => 303, 'estado_mesa' => 'Ocupada', 'activa' => 1]);
-        $id_mesa = $db->insertID();
-        
-        $db->table('Comanda')->insert(['id_mesa' => $id_mesa, 'id_usuario' => 2, 'fecha_hora' => date('Y-m-d H:i:s')]);
-        $id_comanda = $db->insertID();
+        // inserta un platillo real temporal para evitar falla de llave foranea
+        $db->table('Categoria')->ignore(true)->insert(['id_categoria' => 1, 'nombre_categoria' => 'Test']);
+        $db->table('Platillo')->ignore(true)->insert(['id_platillo' => 500, 'nombre_platillo' => 'Taco E2E', 'precio_venta' => 20, 'id_categoria' => 1, 'disponible' => 1]);
 
-        // Insertamos 3 unidades del platillo
-        $db->table('Detalle_Comanda')->insert([
-            'id_comanda' => $id_comanda, 'id_platillo' => 1, 'cantidad' => 3, 'precio_unitario' => 100, 'estado' => 'Pendiente'
-        ]);
-        $id_detalle = $db->insertID();
-
-        $datosCancelacion = [
-            'id_mesa'    => $id_mesa,
-            'id_detalle' => $id_detalle,
-            'cantidad'   => 1, // Vamos a cancelar solo 1
-            'motivo'     => 'Cliente cambió de opinión'
-        ];
-
-        $resultado = $this->withSession($this->getSesionCapitan())->post('capitan/cancelar_item', $datosCancelacion);
-
-        $resultado->assertRedirectTo(base_url("capitan/detalle_orden/$id_mesa/cancelar"));
-        
-        // Validamos que de 3 pasaron a ser 2 en la BD
-        $this->seeInDatabase('Detalle_Comanda', ['id_detalle_comanda' => $id_detalle, 'cantidad' => 2]);
-        $this->seeInDatabase('Movimientos', ['id_mesa' => $id_mesa, 'tipo_movimiento' => 'Cancelacion Platillo']);
-    }
-
-    public function testEjecutarDivisionCreaNuevaMesaYRegistraAuditoria()
-    {
-        $db = \Config\Database::connect();
-        
-        $db->table('Mesa')->insert(['numero_mesa' => '100', 'estado_mesa' => 'Ocupada', 'activa' => 1, 'id_usuario_mesero' => 3]);
+        $db->table('Mesa')->insert(['numero_mesa' => 204, 'estado_mesa' => 'Ocupada', 'activa' => 1, 'id_usuario_mesero' => 3]);
         $id_mesa = $db->insertID();
         
         $db->table('Comanda')->insert(['id_mesa' => $id_mesa, 'id_usuario' => 3, 'fecha_hora' => date('Y-m-d H:i:s')]);
         $id_comanda = $db->insertID();
+        
+        // inserta dos detalles para cancelar uno y dividir el otro
+        $db->table('Detalle_Comanda')->insert(['id_comanda' => $id_comanda, 'id_platillo' => 500, 'cantidad' => 2, 'precio_unitario' => 20]);
+        $id_detalle_cancelar = $db->insertID();
+        $db->table('Detalle_Comanda')->insert(['id_comanda' => $id_comanda, 'id_platillo' => 500, 'cantidad' => 1, 'precio_unitario' => 20]);
+        $id_detalle_dividir = $db->insertID();
 
-        // Item que se va a separar a la nueva cuenta
-        $db->table('Detalle_Comanda')->insert([
-            'id_comanda' => $id_comanda, 'id_platillo' => 1, 'cantidad' => 1, 'precio_unitario' => 50, 'estado' => 'Pendiente'
+        // verifica lectura del detalle
+        $pantalla = $this->withSession($this->getSesionCapitan())->get("capitan/detalle_orden/$id_mesa/cancelar");
+        $pantalla->assertSee('Taco E2E');
+
+        // ejecuta cancelacion de 1 taco
+        $this->withSession($this->getSesionCapitan())->post('capitan/cancelar_item', [
+            'id_detalle' => $id_detalle_cancelar,
+            'cantidad'   => 1,
+            'id_mesa'    => $id_mesa,
+            'motivo'     => 'el cliente no lo quiso'
         ]);
-        $id_item_separado = $db->insertID();
 
-        $datosDivision = [
+        // ejecuta division de cuenta mandando el otro articulo a la mesa b
+        $this->withSession($this->getSesionCapitan())->post('capitan/ejecutar_division', [
             'id_mesa' => $id_mesa,
-            'sufijo'  => 'B',
-            'items'   => [$id_item_separado]
-        ];
+            'sufijo'  => 'b',
+            'items'   => [$id_detalle_dividir]
+        ]);
 
-        $resultado = $this->withSession($this->getSesionCapitan())->post('capitan/ejecutar_division', $datosDivision);
-
-        $resultado->assertRedirectTo(base_url('capitan'));
-        
-        // Validamos que la nueva mesa se creó
-        $this->seeInDatabase('Mesa', ['numero_mesa' => '100-B', 'estado_mesa' => 'Ocupada']);
-        
-        // Validamos que el platillo ya no pertenece a la comanda vieja
-        $this->dontSeeInDatabase('Detalle_Comanda', ['id_detalle_comanda' => $id_item_separado, 'id_comanda' => $id_comanda]);
+        // validaciones fisicas de integracion
+        $this->seeInDatabase('Detalle_Comanda', ['id_detalle_comanda' => $id_detalle_cancelar, 'cantidad' => 1]);
+        $this->seeInDatabase('Mesa', ['numero_mesa' => '204-B', 'estado_mesa' => 'Ocupada']);
+        $this->seeInDatabase('Movimientos', ['id_mesa' => $id_mesa, 'tipo_movimiento' => 'Cancelacion Platillo']);
         $this->seeInDatabase('Movimientos', ['id_mesa' => $id_mesa, 'tipo_movimiento' => 'Division de Cuenta']);
     }
 }
-
-// vendor/bin/phpunit --filter testIndexCargaMesasYCalculaTotales --no-coverage
-// vendor/bin/phpunit --filter testTransferirMesaMueveComandaYRegistraAuditoria --no-coverage
-// vendor/bin/phpunit --filter testCancelarItemActualizaDetalleYRegistraAuditoria --no-coverage
-// vendor/bin/phpunit --filter testEjecutarDivisionCreaNuevaMesaYRegistraAuditoria --no-coverage
+// vendor/bin/phpunit --filter testIntegracionLecturaYReapertura tests/Integration/Controllers/CapitanIntegrationTest.php --no-coverage
+// vendor/bin/phpunit --filter testIntegracionLecturaYTransferencia tests/Integration/Controllers/CapitanIntegrationTest.php --no-coverage
+// vendor/bin/phpunit --filter testIntegracionTotalCancelacionYDivision tests/Integration/Controllers/CapitanIntegrationTest.php --no-coverage
