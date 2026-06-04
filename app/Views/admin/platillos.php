@@ -9,6 +9,18 @@
     </a>
 </div>
 
+<?php if(session()->getFlashdata('error')): ?>
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+        <?= session()->getFlashdata('error') ?>
+    </div>
+<?php endif; ?>
+
+<?php if(session()->getFlashdata('success')): ?>
+    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4">
+        <?= session()->getFlashdata('success') ?>
+    </div>
+<?php endif; ?>
+
 <div class="bg-white rounded-xl shadow overflow-hidden border border-gray-200">
     <table class="w-full text-left text-sm">
         <thead class="bg-gray-50 border-b">
@@ -58,7 +70,7 @@
                         <div class="flex flex-col gap-2 items-start">
                             <a href="<?= base_url('platillos/editar/'.$p['id_platillo']) ?>" class="text-blue-600 hover:underline font-medium">Editar</a>
                             <?php if($p['disponible'] == 1): ?>
-                                <a href="<?= base_url('platillos/eliminar/'.$p['id_platillo']) ?>" onclick="return confirm('¿Marcar este platillo como no disponible?')" class="text-red-600 hover:underline font-medium">Dar de baja</a>
+                                <a href="<?= base_url('platillos/eliminar/'.$p['id_platillo']) ?>" onclick="return confirm('¿validar la baja de producto?')" class="text-red-600 hover:underline font-medium">Dar de baja</a>
                             <?php endif; ?>
                         </div>
                     </td>
