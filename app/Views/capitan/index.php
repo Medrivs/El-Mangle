@@ -19,8 +19,15 @@
             <h1 class="text-xl font-bold">Mapa General de Mesas <span class="font-normal text-gray-300">(Zona Completa)</span></h1>
             <p class="text-sm text-gray-400">Selecciona una mesa para acciones administrativas</p>
         </div>
-        <div class="bg-[#15325A] px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2 border border-[#1E4275]">
-            <i class="fa-regular fa-clock text-[#00B4D8]"></i> <?= date('h:i a') ?>
+        <div class="flex gap-4">
+            <!-- boton global para asignar mesas a los meseros -->
+            <button onclick="abrirModalZonas()" class="bg-green-600 hover:bg-green-500 px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 transition">
+                <i class="fa-solid fa-users"></i> Asignar Zonas
+            </button>
+
+            <div class="bg-[#15325A] px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2 border border-[#1E4275]">
+                <i class="fa-regular fa-clock text-[#00B4D8]"></i> <?= date('h:i a') ?>
+            </div>
         </div>
     </header>
 
@@ -132,18 +139,53 @@
             </div>
         </aside>
     </main>
+    
+    <!-- modal global para asignar zonas y meseros -->
+    <dialog id="modalZonas" class="p-6 rounded-2xl shadow-xl w-[400px] backdrop:bg-black/50">
+        <h3 class="text-xl font-bold mb-4 text-[#0A1F3D]">Asignar Zonas</h3>
+        <form action="<?= base_url('capitan/asignar_mesero') ?>" method="post">
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Mesa a asignar</label>
+                <select name="id_mesa" required class="w-full p-2 border rounded-lg bg-gray-50">
+                    <option value="">Selecciona la mesa</option>
+                    <?php foreach($mesas as $m): ?>
+                        <!-- evitamos mostrar mesas temporales en la lista -->
+                        <?php if(strpos((string)$m['numero_mesa'], '-') === false): ?>
+                            <option value="<?= $m['id_mesa'] ?>">Mesa <?= $m['numero_mesa'] ?> (Actual: <?= $m['mesero'] ?? 'Nadie' ?>)</option>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                </select>
+            </div>
 
-    <!-- INCLUIR EL MODAL EXTRACÍDO -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Mesero a cargo</label>
+                <select name="id_usuario_mesero" required class="w-full p-2 border rounded-lg bg-gray-50">
+                    <option value="">Selecciona al mesero</option>
+                    <?php foreach($meseros as $msr): ?>
+                        <option value="<?= $msr['id_usuario'] ?>"><?= $msr['nombre_completo'] ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <button type="button" onclick="document.getElementById('modalZonas').close()" class="px-4 py-2 bg-gray-200 text-gray-800 font-bold rounded-lg hover:bg-gray-300">Cancelar</button>
+                <button type="submit" class="px-4 py-2 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700">Guardar</button>
+            </div>
+        </form>
+    </dialog>
+
+    <!-- incluir el modal extraido -->
     <?= $this->include('capitan/modal_transferir') ?>
 
-    <!-- COMUNICACIÓN PHP -> JS -->
+    <!-- comunicacion php y js -->
     <script>
         const CONFIG_CAPITAN = {
             baseUrl: '<?= base_url() ?>'
         };
     </script>
 
-    <!-- INCLUIR EL JAVASCRIPT EXTERNO -->
+    <!-- incluir el javascript externo -->
     <script src="<?= base_url('js/capitan.js') ?>"></script>
 </body>
 </html>
