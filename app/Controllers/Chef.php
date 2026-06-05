@@ -17,8 +17,7 @@ class Chef extends BaseController
     public function dashboard()
     {
         if (!session()->get('isLoggedIn') || !in_array(session()->get('id_rol'), [4, 6])) {
-            // Protección de rol de Cocina (comentado a peticion tuya en el original)
-            // return redirect()->to(base_url('/')); 
+            // proteccion de rol de cocina 
         }
 
         $get = $this->request->getGet();
@@ -28,8 +27,11 @@ class Chef extends BaseController
 
         $data = [
             'estacion_activa' => $estacion,
+            // paso 1 y 2 del rf 6 revisar niveles de materia prima e identificar platillos criticos
             'inventario'      => $this->obtenerInventarioPorCategorias($categorias),
+            // paso 4 del rf 7 envia info al monitor principal ordenando por estado pendiente
             'nuevas'          => $this->agruparPorMesa($this->obtenerComandasPorEstado($categorias, 'Pendiente')),
+            // paso 6 del rf 7 recibe impresiones y distribuye agrupando por estado preparando
             'preparando'      => $this->agruparPorMesa($this->obtenerComandasPorEstado($categorias, 'Preparando')),
             'listas'          => array_reverse($this->obtenerComandasPorEstado($categorias, 'Listo'))
         ];
@@ -48,29 +50,33 @@ class Chef extends BaseController
         return redirect()->to(base_url("chef/dashboard?estacion=$estacion"));
     }
 
-    // alterna el switch de advertencia de stock de un ingrediente
+    // paso 3 y 4 del rf 6 alternar el switch de advertencia seleccionando platillo a modificar
     public function toggle_advertencia($id_materia)
     {
         $get = $this->request->getGet();
         $estacion = $get['estacion'] ?? 'caliente';
 
+        // paso 5 y 6 del rf 6 confirmar guardar cambios y actualizar base de datos
+        // excepcion rf 6 si cancela cambio el interruptor en la vista no se activa 
         $this->db->query("UPDATE Materia_Prima SET alerta_manual = NOT alerta_manual WHERE id_materia_prima = ?", [$id_materia]);
         
         return redirect()->to(base_url("chef/dashboard?estacion=$estacion"));
     }
 
-    // alterna el switch de bloqueo total de un ingrediente
+    // paso 3 y 4 del rf 6 alternar el switch de agotado seleccionando platillo a modificar
     public function toggle_bloqueo($id_materia)
     {
         $get = $this->request->getGet();
         $estacion = $get['estacion'] ?? 'caliente';
 
+        // paso 5 y 6 del rf 6 confirmar guardar cambios y actualizar base de datos
+        // paso 7 del rf 6 bloquear seleccion del platillo en el pos
         $this->db->query("UPDATE Materia_Prima SET bloqueado_manual = NOT bloqueado_manual WHERE id_materia_prima = ?", [$id_materia]);
         
         return redirect()->to(base_url("chef/dashboard?estacion=$estacion"));
     }
 
-    // mapea la estacion seleccionada en la url a los IDs de las categorias de platillos
+    // paso 3 del rf 7 clasifica productos por area y estacion mapeando las categorias
     private function obtenerCategoriasPorEstacion(string $estacion): array
     {
         if ($estacion === 'fria') return [3];

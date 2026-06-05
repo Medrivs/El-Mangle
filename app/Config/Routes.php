@@ -76,7 +76,7 @@ $routes->post('caja/corte_caja', 'Caja::corte_caja');
 $routes->get('capitan', 'Capitan::index');
 $routes->post('capitan/transferir', 'Capitan::transferir');
 $routes->get('capitan/reabrir/(:num)', 'Capitan::reabrir/$1');
-// Rutas para ver el detalle de la mesa y cancelar platillos
+$routes->post('capitan/asignar_mesero', 'Capitan::asignar_mesero');
 $routes->get('capitan/detalle_orden/(:num)/(:any)', 'Capitan::detalle_orden/$1/$2');
 $routes->post('capitan/cancelar_item', 'Capitan::cancelar_item');
 $routes->post('capitan/ejecutar_division', 'Capitan::ejecutar_division');

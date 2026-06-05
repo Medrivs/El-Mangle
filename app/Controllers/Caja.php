@@ -28,9 +28,11 @@ class Caja extends BaseController
         $data = [
             'mesas' => [], 
             'mesa_activa' => null, 
+            // paso 4 del rf 18 mostrar balance esperado
             'corte' => $this->obtenerVentasDelDia()
         ];
 
+        // paso 1 del rf 16 consultar tickets pendientes
         $mesasRaw = $this->db->table('Mesa m')
             ->select('m.*, u.nombre_completo as mesero')
             ->join('Usuario u', 'u.id_usuario = m.id_usuario_mesero', 'left')
@@ -38,6 +40,7 @@ class Caja extends BaseController
             ->get()->getResultArray();
 
         foreach ($mesasRaw as $m) {
+            // paso 2 del rf 16 cuenta pago muestra monto total
             $m = array_merge($m, $this->obtenerTotalesMesa($m['id_mesa']));
             $data['mesas'][] = $m;
             if ($id_mesa_sel == $m['id_mesa']) $data['mesa_activa'] = $m;
@@ -55,19 +58,28 @@ class Caja extends BaseController
         $id_mesa = $post['id_mesa'] ?? null;
         
         $comanda = $this->comandaModel->where('id_mesa', $id_mesa)->orderBy('id_comanda', 'DESC')->first();
-        if (!$comanda) return redirect()->back()->with('error', 'Comanda no encontrada.');
+        if (!$comanda) return redirect()->back()->with('error', 'comanda no encontrada');
 
+        // paso 1 del rf 17 detalle comanda suma precio venta
         $consumo = $this->obtenerTotalesMesa($id_mesa)['total'];
         $monto_efectivo = (float)($post['monto_efectivo'] ?? 0);
         $monto_tarjeta = (float)($post['monto_tarjeta'] ?? 0);
+        
+        // paso 3 y 4 del rf 16 seleccionar metodo de pago y confirmar recepcion
         $metodo_pago = $post['metodo_pago'] ?? '';
         
+        // excepcion del rf 16 y rf 17 si el monto no cuadra o es insuficiente pantalla caja bloquea el cierre
+        if (($monto_efectivo + $monto_tarjeta) < $consumo) {
+            return redirect()->back()->with('error', 'solicita completar pago monto insuficiente');
+        }
+
         // calcula la propina global validando que no existan numeros negativos
         $propina_total = ($monto_efectivo + $monto_tarjeta) - $consumo;
         if ($propina_total < 0) $propina_total = 0;
 
         $this->db->transStart();
 
+        // paso 5 del rf 16 y rf 17 cuenta pago registra total efectivo y total tarjeta liquida comanda
         if ($monto_efectivo > 0) {
             $propina = ($metodo_pago === 'efectivo') ? $propina_total : 0;
             $this->registrarPago($comanda['id_comanda'], $monto_efectivo, $propina, 1);
@@ -78,13 +90,22 @@ class Caja extends BaseController
             $this->registrarPago($comanda['id_comanda'], $monto_tarjeta, $propina, 2);
         }
 
-        $this->mesaModel->update($id_mesa, ['estado_mesa' => 'Libre']);
+        $mesa = $this->mesaModel->find($id_mesa);
+        
+        // verifica si el numero de mesa tiene un guion
+        if (strpos((string)$mesa['numero_mesa'], '-') !== false) {
+            // paso 6 del rf 16 mesa cambia estado a libre y se inactiva para desaparecer sin romper la base de datos
+            $this->mesaModel->update($id_mesa, ['estado_mesa' => 'Libre', 'activa' => 0]);
+        } else {
+            // paso 6 del rf 16 mesa cambia estado a libre
+            $this->mesaModel->update($id_mesa, ['estado_mesa' => 'Libre']);
+        }
         
         $this->db->transComplete();
 
         return $this->db->transStatus() 
-            ? redirect()->to(base_url('caja'))->with('success', 'Cuenta pagada exitosamente.')
-            : redirect()->back()->with('error', 'Error al procesar el pago.');
+            ? redirect()->to(base_url('caja'))->with('success', 'notificar exito y liberar vista')
+            : redirect()->back()->with('error', 'error al procesar el pago en base de datos');
     }
 
     // bloquea el cierre si hay clientes y guarda la venta final
@@ -92,14 +113,18 @@ class Caja extends BaseController
     {
         if (!$this->esCajeroAutorizado()) return redirect()->to(base_url('/'));
         
-        if ($this->mesaModel->whereIn('estado_mesa', ['Ocupada', 'Por Pagar'])->countAllResults() > 0) {
-            return redirect()->to(base_url('caja'))->with('error', '⚠️ Todavía hay mesas consumiendo o por pagar.');
+        // paso 1 del rf 18 validar mesas libres
+        // excepcion rf 18 si hay mesas abiertas bloquear proceso
+        if ($this->mesaModel->whereIn('estado_mesa', ['Ocupada', 'Por Pagar'])->where('activa', 1)->countAllResults() > 0) {
+            return redirect()->to(base_url('caja'))->with('error', 'bloquear proceso avisar al capitan hay mesas abiertas');
         }
 
+        // paso 5 del rf 18 ingresar monto fisico y confirmar
         $ventasDia = $this->obtenerVentasDelDia();
 
         $this->db->transStart();
 
+        // paso 6 del rf 18 registrar venta y bloquear turno
         $this->db->table('Reporte_Ventas')->insert([
             'fecha_cierre'     => date('Y-m-d'),
             'total_efectivo'   => $ventasDia['efectivo'],
@@ -111,9 +136,10 @@ class Caja extends BaseController
 
         $this->db->transComplete();
 
+        // paso 7 del rf 18 generar reporte digital cierre finalizado con exito
         return $this->db->transStatus()
-            ? redirect()->to(base_url('caja'))->with('success', '✅ Corte de Caja guardado correctamente.')
-            : redirect()->to(base_url('caja'))->with('error', 'Error en base de datos al guardar el corte.');
+            ? redirect()->to(base_url('caja'))->with('success', 'cierre finalizado con exito')
+            : redirect()->to(base_url('caja'))->with('error', 'error en base de datos al guardar el corte');
     }
 
     // centraliza validacion de sesion
@@ -122,16 +148,16 @@ class Caja extends BaseController
         $isLoggedIn = (bool) session()->get('isLoggedIn');
         $rol = (int) session()->get('id_rol');
         
-        // Solo permite el paso si hay sesión Y el rol es Administrador (1) o Caja (5)
         return $isLoggedIn && in_array($rol, [1, 5]); 
     }
 
-    // devuelve la suma del costo de platillos de la BD aislando la logica
+    // devuelve la suma del costo de platillos de la bd aislando la logica
     private function obtenerTotalesMesa($id_mesa): array
     {
         $comanda = $this->comandaModel->where('id_mesa', $id_mesa)->orderBy('id_comanda', 'DESC')->first();
         if (!$comanda) return ['total' => 0, 'items' => 0, 'id_comanda' => null];
 
+        // paso 1 del rf 17 detalle comanda suma precio venta
         $totales = $this->db->query("SELECT SUM(cantidad * precio_unitario) as total, SUM(cantidad) as items FROM Detalle_Comanda WHERE id_comanda = ?", [$comanda['id_comanda']])->getRowArray();
         
         return ['total' => $totales['total'] ?? 0, 'items' => $totales['items'] ?? 0, 'id_comanda' => $comanda['id_comanda']];
@@ -140,6 +166,7 @@ class Caja extends BaseController
     // calcula dinero real en caja aislando las propinas para la venta neta
     private function obtenerVentasDelDia(): array
     {
+        // paso 2 y 3 del rf 18 consultar ids de tickets pagados y datos de montos efectivo tarjeta
         $pagos = $this->db->table('Cuenta_Pago cp')
             ->select('mp.nombre as metodo, SUM(cp.total) as suma_total, SUM(cp.propina) as suma_propinas')
             ->join('Metodo_Pago mp', 'mp.id_metodo = cp.id_metodo', 'left')
@@ -155,18 +182,20 @@ class Caja extends BaseController
             $corte['propinas'] += $p['suma_propinas'];
         }
         
-        // Venta Neta = Todo el dinero cobrado MENOS las propinas de los meseros
+        // paso 6 del rf 17 entidad venta actualiza venta neta
         $corte['venta_neta'] = ($corte['efectivo'] + $corte['tarjeta']) - $corte['propinas'];
         return $corte;
     }
 
-    // calcula el subtotal e IVA unicamente sobre el consumo base sin tocar propinas
+    // calcula el subtotal e iva unicamente sobre el consumo base sin tocar propinas
     private function registrarPago($id_comanda, $total_recibido, $propina, $id_metodo)
     {
+        // paso 2 del rf 17 cuenta pago calcula subtotal e impuestos
         $consumo_restaurante = $total_recibido - $propina;
         $subtotal = $consumo_restaurante / 1.16;
         $iva = $consumo_restaurante - $subtotal;
 
+        // paso 3 del rf 17 cuenta pago genera monto total
         $this->db->table('Cuenta_Pago')->insert([
             'id_comanda'      => $id_comanda,
             'id_usuario'      => session()->get('id_usuario'),
